@@ -1,0 +1,41 @@
+// 测试垃圾回收功能
+// 测试1：基本引用跟踪
+var obj1 = { name: "Object 1", value: 100 }
+var obj2 = { name: "Object 2", value: 200 }
+
+// 创建引用关系
+obj1.ref = obj2
+obj2.ref = obj1
+
+// 移除对obj1和obj2的引用
+obj1 = null
+obj2 = null
+
+// 测试2：数组中的循环引用
+var array1 = []
+var array2 = []
+
+array1.push(array2)
+array2.push(array1)
+
+// 移除对数组的引用
+array1 = null
+array2 = null
+
+// 测试3：复杂的嵌套引用
+var nested = {
+    level1: {
+        level2: {
+            level3: "deep value"
+        }
+    }
+}
+
+// 测试4：大量对象创建和回收
+for (var i = 0; i < 10000; i++) {
+    var temp = { index: i, data: "temp" + i }
+    // 每次循环结束后，temp应该被自动回收
+}
+
+// 显示内存使用状态（如果有相关函数）
+print("GC test completed successfully")

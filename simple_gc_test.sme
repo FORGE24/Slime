@@ -1,0 +1,18 @@
+// 简单的垃圾回收测试脚本
+// 只使用解析器支持的基本语法
+
+// 测试1：基本引用跟踪
+var a = 100
+var b = 200
+
+// 测试2：变量赋值
+var c = a
+c = b
+
+// 测试3：循环创建临时变量
+for (var i = 0; i < 1000; i = i + 1) {
+    var temp = i
+}
+
+// 测试4：函数调用
+print("GC test completed successfully")

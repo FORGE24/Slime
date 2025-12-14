@@ -1,0 +1,7 @@
+#v introduce "baseline.smeh"
+cra main{
+    use print "hello world"  // 输出 14
+}
+del main
+
+#

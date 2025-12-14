@@ -1,0 +1,37 @@
+#v introduce "baseline.smeh"
+
+cra main {
+    #a set i 0
+    #a set sum 0
+    
+    // 测试循环性能
+    while (i < 1000) {
+        #a set sum (sum + i)
+        #a set i (i + 1)
+    }
+    
+    use println "Sum of 0 to 999: " sum
+    
+    // 测试条件语句性能
+    #a set j 0
+    while (j < 1000) {
+        if (j % 2 == 0) {
+            #a set k (j * 2)
+        } else {
+            #a set k (j * 3)
+        }
+        #a set j (j + 1)
+    }
+    
+    use println "Conditional test completed"
+    
+    // 测试函数调用性能
+    #a set counter 0
+    while (counter < 1000) {
+        use print ""  // 空打印，测试函数调用开销
+        #a set counter (counter + 1)
+    }
+    
+    use println "Function call test completed"
+}
+del main

@@ -1,0 +1,49 @@
+#v introduce "baseline.smeh"
+
+cra main{
+    use print "Testing basic functionality..."
+    
+    // 测试变量赋值和数学运算
+    let x = 10
+    let y = 20
+    let z = x + y
+    use print "x + y = " z
+    
+    // 测试条件语句
+    if x < y {
+        use print "x is less than y"
+    } else {
+        use print "x is greater than or equal to y"
+    }
+    
+    // 测试循环语句
+    use print "Testing loop:"
+    let i = 0
+    while i < 5 {
+        use print "Loop iteration: " i
+        let i = i + 1
+    }
+    
+    // 测试break语句
+    use print "Testing break:"
+    let j = 0
+    while true {
+        if j >= 3 {
+            break
+        }
+        use print "Break test: " j
+        let j = j + 1
+    }
+    
+    // 测试continue语句
+    use print "Testing continue:"
+    let k = 0
+    while k < 5 {
+        let k = k + 1
+        if k == 3 {
+            continue
+        }
+        use print "Continue test: " k
+    }
+}
+del main

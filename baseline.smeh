@@ -1,0 +1,135 @@
+# 基础语言功能库 v1.0
+# 此文件定义了语言的核心系统接口和常量
+# 通过 #v introduce "baseline.smeh" 引入
+
+#n define "SYSTEM_VERSION" "1.0.0"
+#n define "LANGUAGE_NAME" "MyLang"
+#n define "AUTHOR" "You"
+
+#n define "TRUE" 1
+#n define "FALSE" 0
+#n define "YES" 1
+#n define "NO" 0
+#n define "ON" 1
+#n define "OFF" 0
+
+#a set "strict_mode" ON
+#a set "debug_mode" OFF
+#a set "auto_memory_clean" ON
+#a set "type_check" STRICT
+
+#v register "print" to "System.Output.Print"
+#v register "println" to "System.Output.Println"
+#v register "input" to "System.Input.Read"
+#v register "inputln" to "System.Input.ReadLine"
+
+#v register "add" to "System.Math.Add"
+#v register "sub" to "System.Math.Subtract"
+#v register "mul" to "System.Math.Multiply"
+#v register "div" to "System.Math.Divide"
+#v register "mod" to "System.Math.Modulo"
+
+#v register "eq" to "System.Compare.Equal"
+#v register "neq" to "System.Compare.NotEqual"
+#v register "gt" to "System.Compare.GreaterThan"
+#v register "lt" to "System.Compare.LessThan"
+#v register "gte" to "System.Compare.GreaterOrEqual"
+#v register "lte" to "System.Compare.LessOrEqual"
+
+#v register "and" to "System.Logic.And"
+#v register "or" to "System.Logic.Or"
+#v register "not" to "System.Logic.Not"
+#v register "xor" to "System.Logic.Xor"
+
+#v register "strlen" to "System.String.Length"
+#v register "strcat" to "System.String.Concatenate"
+#v register "strfind" to "System.String.Find"
+#v register "strsub" to "System.String.Substring"
+
+#v register "int" to "System.Type.Integer"
+#v register "float" to "System.Type.Float"
+#v register "string" to "System.Type.String"
+#v register "bool" to "System.Type.Boolean"
+
+#v register "if" to "System.Control.If"
+#v register "while" to "System.Control.While"
+#v register "for" to "System.Control.For"
+#v register "loop" to "System.Control.Loop"
+#v register "break" to "System.Control.Break"
+
+#v register "exit" to "System.Process.Exit"
+#v register "error" to "System.Process.Error"
+#v register "warning" to "System.Process.Warning"
+
+#v register "time" to "System.Time.Now"
+#v register "sleep" to "System.Time.Sleep"
+#v register "delay" to "System.Time.Delay"
+
+#v register "random" to "System.Math.Random"
+#v register "randint" to "System.Math.RandomInt"
+#v register "randfloat" to "System.Math.RandomFloat"
+
+#v register "abs" to "System.Math.Absolute"
+#v register "sqrt" to "System.Math.SquareRoot"
+#v register "pow" to "System.Math.Power"
+#v register "round" to "System.Math.Round"
+#v register "floor" to "System.Math.Floor"
+#v register "ceil" to "System.Math.Ceiling"
+
+#v register "sin" to "System.Math.Sin"
+#v register "cos" to "System.Math.Cos"
+#v register "tan" to "System.Math.Tan"
+#v register "log" to "System.Math.Logarithm"
+#v register "exp" to "System.Math.Exponential"
+
+#v register "max" to "System.Math.Maximum"
+#v register "min" to "System.Math.Minimum"
+#v register "avg" to "System.Math.Average"
+#v register "sum" to "System.Math.Sum"
+
+#v register "array_create" to "System.Array.Create"
+#v register "array_push" to "System.Array.Push"
+#v register "array_pop" to "System.Array.Pop"
+#v register "array_length" to "System.Array.Length"
+#v register "array_get" to "System.Array.Get"
+#v register "array_set" to "System.Array.Set"
+
+#v register "map_create" to "System.Map.Create"
+#v register "map_set" to "System.Map.Set"
+#v register "map_get" to "System.Map.Get"
+#v register "map_has" to "System.Map.Has"
+#v register "map_remove" to "System.Map.Remove"
+
+#v register "file_open" to "System.File.Open"
+#v register "file_close" to "System.File.Close"
+#v register "file_read" to "System.File.Read"
+#v register "file_write" to "System.File.Write"
+#v register "file_exists" to "System.File.Exists"
+#v register "file_delete" to "System.File.Delete"
+
+#v register "dir_list" to "System.File.ListDirectory"
+#v register "dir_create" to "System.File.CreateDirectory"
+#v register "dir_remove" to "System.File.RemoveDirectory"
+
+#v register "net_connect" to "System.Network.Connect"
+#v register "net_send" to "System.Network.Send"
+#v register "net_receive" to "System.Network.Receive"
+#v register "net_close" to "System.Network.Close"
+
+#v register "crypto_hash" to "System.Crypto.Hash"
+#v register "crypto_encrypt" to "System.Crypto.Encrypt"
+#v register "crypto_decrypt" to "System.Crypto.Decrypt"
+
+#v register "json_encode" to "System.Data.JsonEncode"
+#v register "json_decode" to "System.Data.JsonDecode"
+
+#n define "MAX_INT" 2147483647
+#n define "MIN_INT" -2147483648
+#n define "PI" 3.141592653589793
+#n define "E" 2.718281828459045
+#n define "GRAVITY" 9.80665
+
+#a set "max_memory_mb" 1024
+#a set "max_execution_time_ms" 5000
+#a set "max_recursion_depth" 1000
+#a set "default_timeout_ms" 30000
