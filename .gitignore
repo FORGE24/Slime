@@ -1,3 +1,43 @@
+# Rust / Cargo
+/target/
+
+# IDE / 编辑器
+.vscode/
+.idea/
+*.suo
+*.user
+*.userossc
+*.sln.docstates
+
+# 通用编译产物
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
+*.lib
+*.a
+*.pdb
+*.ilk
+*.exp
+
+# Slime / 项目相关生成文件
+*.sme
+*.smeh
+*.smeo
+slimec.d
+slimec.exe
+slimec.obj
+slimec.asm
+generated.asm
+generated.obj
+generated.exe
+out.txt
+
+# Rust 备份文件
+**/*.rs.bk
+<<<<<<< HEAD
 # Generated build artifacts
 generated.asm
 generated.obj
@@ -1439,3 +1479,23 @@ out.txt
 *.r-*.a
 *.r-*.so
 *.r-...
+=======
+# Build and Release Folders
+bin-debug/
+bin-release/
+[Oo]bj/
+[Bb]in/
+
+# Other files and folders
+.settings/
+
+# Executables
+*.swf
+*.air
+*.ipa
+*.apk
+
+# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
+# should NOT be excluded as they contain compiler settings and other important
+# information for Eclipse / Flash Builder.
+>>>>>>> 2c0ac7726d2bd8ee0867e74329cc19fb6859808f
