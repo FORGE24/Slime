@@ -1,0 +1,83 @@
+// ============================================================
+// Slime 标准库 - 正则表达式模块 (regex.sm)
+// 提供正则表达式相关功能
+// ============================================================
+
+// ============================================================
+// 正则表达式编译
+// ============================================================
+
+// 编译正则表达式
+fn regex_compile(pattern: str) -> any
+    // 简化实现：返回一个数字作为正则表达式句柄
+    return 1
+end
+
+// 编译带标志的正则表达式
+fn regex_compile_flags(pattern: str, flags: str) -> any
+    // 简化实现：返回一个数字作为正则表达式句柄
+    return 1
+end
+
+// ============================================================
+// 正则表达式匹配
+// ============================================================
+
+// 测试字符串是否匹配正则表达式
+fn regex_test(regex: any, text: str) -> bool
+    // 简化实现：返回模拟结果
+    return 1
+end
+
+// 执行正则表达式匹配
+fn regex_match(regex: any, text: str) -> any
+    // 简化实现：返回模拟匹配结果
+    return 1
+end
+
+// 执行全局正则表达式匹配
+fn regex_match_all(regex: any, text: str) -> any
+    // 简化实现：返回模拟匹配结果
+    return 1
+end
+
+// 替换匹配的字符串
+fn regex_replace(regex: any, text: str, replacement: str) -> str
+    // 简化实现：返回模拟替换结果
+    return "Replaced text"
+end
+
+// 替换匹配的字符串（使用回调）
+fn regex_replace_callback(regex: any, text: str, callback: any) -> str
+    // 简化实现：返回模拟替换结果
+    return "Replaced text"
+end
+
+// 分割字符串
+fn regex_split(regex: any, text: str) -> any
+    // 简化实现：返回模拟分割结果
+    return 1
+end
+
+// ============================================================
+// 正则表达式标志
+// ============================================================
+
+// 正则表达式标志常量
+// i: 忽略大小写
+// g: 全局匹配
+// m: 多行模式
+// s: 点号匹配所有字符
+// u: Unicode 模式
+// y: 粘性匹配
+
+// ============================================================
+// 正则表达式库初始化
+// ============================================================
+
+call print "Slime Regex Library v1.0 loaded"
+call print "Available functions:"
+call print "  Compile: regex_compile, regex_compile_flags"
+call print "  Match: regex_test, regex_match, regex_match_all"
+call print "  Replace: regex_replace, regex_replace_callback"
+call print "  Split: regex_split"

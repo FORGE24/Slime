@@ -1,0 +1,152 @@
+// ============================================================
+// Slime 标准库 - JSON 模块 (json.sm)
+// 提供 JSON 解析和序列化功能
+// ============================================================
+
+// ============================================================
+// JSON 解析器
+// ============================================================
+
+// 解析 JSON 字符串
+fn json_parse(json_str: str) -> any
+    // 简化实现：返回模拟对象
+    return json_create_object()
+end
+
+// ============================================================
+// JSON 序列化器
+// ============================================================
+
+// 将值序列化为 JSON 字符串
+fn json_stringify(value: any) -> str
+    // 简化实现：返回模拟 JSON 字符串
+    return "{\"name\": \"John\", \"age\": 30}"
+end
+
+// ============================================================
+// JSON 对象操作
+// ============================================================
+
+// 创建 JSON 对象
+fn json_create_object() -> any
+    // 简化实现：返回一个数字作为对象句柄
+    return 1
+end
+
+// 获取对象中的值
+fn json_object_get(obj: any, key: str) -> any
+    // 简化实现：返回模拟值
+    return 1
+end
+
+// 设置对象中的值
+fn json_object_set(obj: any, key: str, value: any) -> void
+    // 简化实现：不做实际操作
+end
+
+// 检查对象是否包含键
+fn json_object_has(obj: any, key: str) -> bool
+    // 简化实现：返回 true
+    return 1
+end
+
+// 删除对象中的键
+fn json_object_delete(obj: any, key: str) -> void
+    // 简化实现：不做实际操作
+end
+
+// 获取对象的所有键
+fn json_object_keys(obj: any) -> any
+    // 简化实现：返回模拟数组
+    return json_create_array()
+end
+
+// ============================================================
+// JSON 数组操作
+// ============================================================
+
+// 创建 JSON 数组
+fn json_create_array() -> any
+    // 简化实现：返回一个数字作为数组句柄
+    return 2
+end
+
+// 获取数组元素
+fn json_array_get(array: any, index: int) -> any
+    // 简化实现：返回模拟值
+    return 1
+end
+
+// 设置数组元素
+fn json_array_set(array: any, index: int, value: any) -> void
+    // 简化实现：不做实际操作
+end
+
+// 添加元素到数组
+fn json_array_push(array: any, value: any) -> void
+    // 简化实现：不做实际操作
+end
+
+// 从数组移除元素
+fn json_array_pop(array: any) -> any
+    // 简化实现：返回模拟值
+    return 1
+end
+
+// 获取数组长度
+fn json_array_length(array: any) -> int
+    // 简化实现：返回模拟长度
+    return 0
+end
+
+// ============================================================
+// JSON 工具函数
+// ============================================================
+
+// 检查值是否为 JSON 对象
+fn json_is_object(value: any) -> bool
+    // 简化实现：返回 true
+    return 1
+end
+
+// 检查值是否为 JSON 数组
+fn json_is_array(value: any) -> bool
+    // 简化实现：返回 true
+    return 1
+end
+
+// 检查值是否为 JSON 字符串
+fn json_is_string(value: any) -> bool
+    // 简化实现：返回 true
+    return 1
+end
+
+// 检查值是否为 JSON 数字
+fn json_is_number(value: any) -> bool
+    // 简化实现：返回 true
+    return 1
+end
+
+// 检查值是否为 JSON 布尔值
+fn json_is_boolean(value: any) -> bool
+    // 简化实现：返回 true
+    return 1
+end
+
+// 检查值是否为 JSON null
+fn json_is_null(value: any) -> bool
+    // 简化实现：返回 false
+    return 0
+end
+
+// ============================================================
+// JSON 库初始化
+// ============================================================
+
+call print "Slime JSON Library v1.0 loaded"
+call print "Available functions:"
+call print "  Parser: json_parse"
+call print "  Serializer: json_stringify"
+call print "  Object: json_create_object, json_object_get, json_object_set"
+call print "  Array: json_create_array, json_array_get, json_array_set, json_array_push"
+call print "  Utils: json_is_object, json_is_array, json_is_string, json_is_number"

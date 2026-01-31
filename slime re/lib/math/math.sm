@@ -1,0 +1,252 @@
+// ============================================================
+// Slime 标准库 - 数学模块 (math.sm)
+// 提供常用的数学函数和常量
+// ============================================================
+
+// 数学常量
+let PI = 3.14159265358979323846      // π
+let E = 2.71828182845904523536       // 自然对数的底
+to two decimal places
+let DEG_TO_RAD = 0.017453292519943295 // π/180，度转弧度
+let RAD_TO_DEG = 57.29577951308232    // 180/π，弧度转度
+
+// ============================================================
+// 基础数学函数
+// ============================================================
+
+// 绝对值
+fn math_abs(x: int) -> int
+    if x < 0
+        return 0 - x
+    end
+    return x
+end
+
+// 浮点数绝对值
+fn math_fabs(x: float) -> float
+    if x < 0.0
+        return 0.0 - x
+    end
+    return x
+end
+
+// 最大值
+fn math_max(a: int, b: int) -> int
+    if a > b
+        return a
+    end
+    return b
+end
+
+// 最小值
+fn math_min(a: int, b: int) -> int
+    if a < b
+        return a
+    end
+    return b
+end
+
+// ============================================================
+// 幂运算和对数
+// ============================================================
+
+// 整数幂运算（快速幂算法）
+fn pow(base: int, exponent: int) -> int
+    if exponent == 0
+        return 1
+    end
+    if exponent == 1
+        return base
+    end
+    
+    var result = 1
+    var current = base
+    var exp = exponent
+    
+    while exp > 0
+        if exp % 2 == 1
+            result = result * current
+        end
+        current = current * current
+        exp = exp / 2
+    end
+    
+    return result
+end
+
+// 平方根（牛顿迭代法）
+fn sqrt(x: int) -> int
+    if x < 0
+        return 0 // 负数返回0
+    end
+    if x == 0 || x == 1
+        return x
+    end
+    
+    var low = 1
+    var high = x
+    var result = 0
+    
+    while low <= high
+        var mid = (low + high) / 2
+        var square = mid * mid
+        
+        if square == x
+            return mid
+        end
+        
+        if square < x
+            low = mid + 1
+            result = mid
+        else
+            high = mid - 1
+        end
+    end
+    
+    return result
+end
+
+// ============================================================
+// 三角函数（简化版）
+// ============================================================
+
+// 正弦函数（简化版，使用泰勒级数前几项）
+fn sin(angle: float) -> float
+    // 将角度限制在 [-π, π] 范围内
+    var x = angle
+    while x > 3.1415926535
+        x = x - 6.283185307
+    end
+    while x < -3.1415926535
+        x = x + 6.283185307
+    end
+    
+    // 泰勒级数展开到 x^5 项
+    var x2 = x * x
+    var x3 = x2 * x
+    var x5 = x3 * x2
+    
+    return x - (x3 / 6.0) + (x5 / 120.0)
+end
+
+// 余弦函数（简化版，使用泰勒级数前几项）
+fn cos(angle: float) -> float
+    // 将角度限制在 [-π, π] 范围内
+    var x = angle
+    while x > 3.1415926535
+        x = x - 6.283185307
+    end
+    while x < -3.1415926535
+        x = x + 6.283185307
+    end
+    
+    // 泰勒级数展开到 x^4 项
+    var x2 = x * x
+    var x4 = x2 * x2
+    
+    return 1.0 - (x2 / 2.0) + (x4 / 24.0)
+end
+
+// ============================================================
+// 其他数学函数
+// ============================================================
+
+// 阶乘
+fn factorial(n: int) -> int
+    if n < 0
+        return 0 // 负数返回0
+    end
+    if n == 0 || n == 1
+        return 1
+    end
+    
+    var result = 1
+    var i = 2
+    while i <= n
+        result = result * i
+        i = i + 1
+    end
+    
+    return result
+end
+
+// 斐波那契数列（迭代版，避免递归开销）
+fn fibonacci(n: int) -> int
+    if n <= 0
+        return 0
+    end
+    if n == 1
+        return 1
+    end
+    
+    var a = 0
+    var b = 1
+    var i = 2
+    
+    while i <= n
+        var temp = a + b
+        a = b
+        b = temp
+        i = i + 1
+    end
+    
+    return b
+end
+
+// 素数判定（优化版）
+fn is_prime(n: int) -> bool
+    if n <= 1
+        return false
+    end
+    if n <= 3
+        return true
+    end
+    if n % 2 == 0 || n % 3 == 0
+        return false
+    end
+    
+    var i = 5
+    while i * i <= n
+        if n % i == 0 || n % (i + 2) == 0
+            return false
+        end
+        i = i + 6
+    end
+    
+    return true
+end
+
+// 最大公约数（欧几里得算法）
+fn gcd(a: int, b: int) -> int
+    var x = math_abs(a)
+    var y = math_abs(b)
+    
+    while y != 0
+        var temp = y
+        y = x % y
+        x = temp
+    end
+    
+    return x
+end
+
+// 最小公倍数
+fn lcm(a: int, b: int) -> int
+    if a == 0 || b == 0
+        return 0
+    end
+    
+    var product = a * b
+    var abs_product = math_abs(product)
+    return abs_product / gcd(a, b)
+end
+
+// ============================================================
+// 数学库初始化
+// ============================================================
+
+call print "Slime Math Library v1.0 loaded"
+call print "Available functions: math_abs, math_fabs, math_max, math_min, pow, sqrt"
+call print "                     sin, cos, factorial, fibonacci"
+call print "                     is_prime, gcd, lcm"
+call print "Constants: PI, E, DEG_TO_RAD, RAD_TO_DEG"

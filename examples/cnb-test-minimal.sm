@@ -1,2 +1,0 @@
-// 最小 CNB 测试
-extern "stdcall" fn MessageBoxA(hwnd: uintptr, text: cstr, caption: cstr, flags: uint) -> int

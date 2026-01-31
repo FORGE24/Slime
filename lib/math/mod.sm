@@ -1,0 +1,65 @@
+// Math library for Slime
+
+// Basic arithmetic functions
+export fn add(a: f64, b: f64) -> f64 {
+    return a + b;
+}
+
+export fn subtract(a: f64, b: f64) -> f64 {
+    return a - b;
+}
+
+export fn multiply(a: f64, b: f64) -> f64 {
+    return a * b;
+}
+
+export fn divide(a: f64, b: f64) -> f64 {
+    return a / b;
+}
+
+// Trigonometric functions
+export fn sin(x: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+export fn cos(x: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+export fn tan(x: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+// Exponential and logarithmic functions
+export fn exp(x: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+export fn ln(x: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+export fn log10(x: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+// Power functions
+export fn pow(x: f64, y: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+export fn sqrt(x: f64) -> f64 {
+    // Implementation will be provided by compiler
+    return 0.0;
+}
+
+// Constants
+export const PI: f64 = 3.141592653589793;
+export const E: f64 = 2.718281828459045;

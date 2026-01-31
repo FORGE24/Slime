@@ -1,8 +1,0 @@
-// test-try.sm: test try/catch
-fn main {
-    try {
-        call Example.Print "in try"
-    } catch {
-        call Example.Print "caught"
-    }
-}

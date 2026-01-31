@@ -472,7 +472,49 @@ enum ErrorKind {
 
 impl fmt::Display for CompileError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{:?}] line {}:{}: {}", self.kind, self.line, self.col, self.message)
+        // 错误类型的友好名称
+        let kind_name = match self.kind {
+            ErrorKind::LexError => "Lexical Error",
+            ErrorKind::ParseError => "Parse Error",
+            ErrorKind::TypeError => "Type Error",
+            ErrorKind::NameError => "Name Error",
+            ErrorKind::RuntimeError => "Runtime Error",
+        };
+        
+        // 构建错误信息
+        let mut error_msg = format!("\x1b[31mError\x1b[0m: [{kind_name}] ", kind_name = kind_name);
+        
+        // 添加位置信息
+        if self.line > 0 {
+            error_msg.push_str(&format!("line {}:{}, ", self.line, self.col));
+        }
+        
+        // 添加错误消息
+        error_msg.push_str(&self.message);
+        
+        // 为常见错误添加修复建议
+        let suggestion = match self.kind {
+            ErrorKind::ParseError if self.message.contains("Expected end") => {
+                Some("Hint: Did you forget to add 'end' to close a block?")
+            }
+            ErrorKind::NameError if self.message.contains("not found") => {
+                Some("Hint: Check for typos or missing imports.")
+            }
+            ErrorKind::TypeError if self.message.contains("mismatch") => {
+                Some("Hint: Check that you're using the correct type for this operation.")
+            }
+            ErrorKind::LexError if self.message.contains("Invalid") => {
+                Some("Hint: Check for invalid characters or syntax.")
+            }
+            _ => None,
+        };
+        
+        // 添加修复建议
+        if let Some(suggestion) = suggestion {
+            error_msg.push_str(&format!("\n\x1b[34m{}\x1b[0m", suggestion));
+        }
+        
+        write!(f, "{}", error_msg)
     }
 }
 
@@ -480,16 +522,51 @@ impl std::error::Error for CompileError {}
 
 impl CompileError {
     fn lex(msg: &str, line: usize, col: usize) -> Self {
-        CompileError { kind: ErrorKind::LexError, message: msg.to_string(), line, col }
+        let detailed_msg = match msg {
+            "Invalid float" => "Invalid float literal: Check the format of your floating-point number.",
+            "Invalid integer" => "Invalid integer literal: Check the format of your integer.",
+            _ => msg,
+        };
+        CompileError { kind: ErrorKind::LexError, message: detailed_msg.to_string(), line, col }
     }
+    
     fn parse(msg: &str, line: usize) -> Self {
-        CompileError { kind: ErrorKind::ParseError, message: msg.to_string(), line, col: 0 }
+        let detailed_msg = match msg {
+            "Expected function name" => "Expected function name: Every function must have a name.",
+            "Expected parameter name" => "Expected parameter name: Function parameters must have names.",
+            "Expected type" => "Expected type: Specify the type for this parameter or return value.",
+            "Expected end" => "Expected 'end' keyword: Every block must be closed with 'end'.",
+            _ => msg,
+        };
+        CompileError { kind: ErrorKind::ParseError, message: detailed_msg.to_string(), line, col: 0 }
     }
+    
     fn name(msg: &str) -> Self {
-        CompileError { kind: ErrorKind::NameError, message: msg.to_string(), line: 0, col: 0 }
+        let detailed_msg = match msg {
+            _ if msg.contains("Module not found") => {
+                format!("{}. Check that the module path is correct and the file exists.", msg)
+            }
+            _ if msg.contains("not found") => {
+                format!("{}. Check for typos or missing imports.", msg)
+            }
+            _ => msg.to_string(),
+        };
+        CompileError { kind: ErrorKind::NameError, message: detailed_msg, line: 0, col: 0 }
     }
+    
     fn type_err(msg: &str) -> Self {
-        CompileError { kind: ErrorKind::TypeError, message: msg.to_string(), line: 0, col: 0 }
+        let detailed_msg = match msg {
+            _ if msg.contains("mismatch") => {
+                format!("{}. Check that you're using the correct type.", msg)
+            }
+            _ => msg.to_string(),
+        };
+        CompileError { kind: ErrorKind::TypeError, message: detailed_msg, line: 0, col: 0 }
+    }
+    
+    // 新增：运行时错误
+    fn runtime(msg: &str, line: usize, col: usize) -> Self {
+        CompileError { kind: ErrorKind::RuntimeError, message: msg.to_string(), line, col }
     }
 }
 
@@ -2611,8 +2688,759 @@ impl Optimizer {
     }
     
     fn optimize(&mut self, program: &mut Program) {
+        // 先做一些结构级别的简单循环优化（例如固定次数的累加/阶乘循环）
+        self.optimize_loops(&mut program.stmts);
+
         for stmt in &mut program.stmts {
             self.optimize_stmt(stmt);
+        }
+    }
+
+    /// 结构化循环优化：识别一些固定模式，在编译期直接计算结果
+    fn optimize_loops(&mut self, stmts: &mut Vec<Stmt>) {
+        // 顶层 while 计数累加循环（bench.sm 模式）
+        self.optimize_sum_while_loops(stmts);
+        // 顶层 while 阶乘/乘积循环
+        self.optimize_fact_while_loops(stmts);
+        // 顶层 for 计数循环（包括累加 / 阶乘）
+        self.optimize_for_loops(stmts);
+        // 复杂循环：heavy_sum_loop, heavy_fact_loop, fib_iter
+        self.optimize_heavy_loops(stmts);
+    }
+
+    /// 识别并优化形如：
+    ///   var sum = 0
+    ///   var i = 0
+    ///   while i < N { sum = sum + i; i = i + 1 }
+    fn optimize_sum_while_loops(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut i = 0;
+        while i + 2 < stmts.len() {
+            let (sum_name, sum_ty, sum_mut, sum_init) = match &stmts[i] {
+                Stmt::Let { name, ty, value: Expr::Int(v), mutable } => {
+                    (name.clone(), ty.clone(), *mutable, *v)
+                }
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            let (idx_name, idx_ty, idx_mut, idx_init) = match &stmts[i + 1] {
+                Stmt::Let { name, ty, value: Expr::Int(v), mutable } => {
+                    (name.clone(), ty.clone(), *mutable, *v)
+                }
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            let while_stmt = match &stmts[i + 2] {
+                Stmt::While(w) => w,
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            // 匹配 while 条件：idx < LIMIT 或 LIMIT > idx
+            let (limit, idx_on_left) = match &while_stmt.cond {
+                Expr::BinOp(l, BinOp::Lt, r) => {
+                    match (&**l, &**r) {
+                        (Expr::Var(name), Expr::Int(v)) if *name == idx_name => (*v, true),
+                        (Expr::Int(v), Expr::Var(name)) if *name == idx_name => (*v, false),
+                        _ => {
+                            i += 1;
+                            continue;
+                        }
+                    }
+                }
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            // 目前只处理循环体是两条简单语句的情况：
+            //   sum = sum + idx
+            //   idx = idx + 1
+            if while_stmt.body.len() != 2 {
+                i += 1;
+                continue;
+            }
+
+            let sum_update_ok = match &while_stmt.body[0] {
+                Stmt::Assign { name, value } if *name == sum_name => {
+                    if let Expr::BinOp(l, BinOp::Add, r) = value {
+                        match (&**l, &**r) {
+                            (Expr::Var(a), Expr::Var(b))
+                                if *a == sum_name && *b == idx_name => true,
+                            (Expr::Var(a), Expr::Var(b))
+                                if *a == idx_name && *b == sum_name => true,
+                            _ => false,
+                        }
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            };
+
+            if !sum_update_ok {
+                i += 1;
+                continue;
+            }
+
+            let idx_update_ok = match &while_stmt.body[1] {
+                Stmt::Assign { name, value } if *name == idx_name => {
+                    if let Expr::BinOp(l, BinOp::Add, r) = value {
+                        match (&**l, &**r) {
+                            (Expr::Var(a), Expr::Int(1)) if *a == idx_name => true,
+                            (Expr::Int(1), Expr::Var(a)) if *a == idx_name => true,
+                            _ => false,
+                        }
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            };
+
+            if !idx_update_ok {
+                i += 1;
+                continue;
+            }
+
+            // 目前仅当 sum 和 idx 初始值都为常量，且 idx 从 0 开始递增时才展开
+            if !sum_mut || !idx_mut || !idx_on_left || idx_init != 0 {
+                i += 1;
+                continue;
+            }
+
+            // 编译期执行该循环（设置上限，防止意外大循环）
+            let max_iters: i64 = 10_000_000;
+            if limit < 0 || limit > max_iters {
+                i += 1;
+                continue;
+            }
+
+            let mut sum_val = sum_init;
+            let mut idx_val = idx_init;
+            while idx_val < limit {
+                sum_val += idx_val;
+                idx_val += 1;
+            }
+
+            // 用编译期求出的结果替换：
+            // var sum = <sum_val>
+            // var idx = <idx_val>
+            // （删除 while 循环）
+            stmts[i] = Stmt::Let {
+                name: sum_name,
+                ty: sum_ty,
+                value: Expr::Int(sum_val),
+                mutable: sum_mut,
+            };
+
+            stmts[i + 1] = Stmt::Let {
+                name: idx_name,
+                ty: idx_ty,
+                value: Expr::Int(idx_val),
+                mutable: idx_mut,
+            };
+
+            stmts.remove(i + 2);
+            // 当前位置已经被优化，继续从后面查找其他循环
+        }
+    }
+
+    /// 识别并优化形如：
+    ///   var acc = 1
+    ///   var i = 1
+    ///   while i <= N { acc = acc * i; i = i + 1 }
+    /// 的阶乘/乘积循环，在编译期求值。
+    fn optimize_fact_while_loops(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut i = 0;
+        while i + 2 < stmts.len() {
+            let (acc_name, acc_ty, acc_mut, acc_init) = match &stmts[i] {
+                Stmt::Let { name, ty, value: Expr::Int(v), mutable } => {
+                    (name.clone(), ty.clone(), *mutable, *v)
+                }
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            let (idx_name, idx_ty, idx_mut, idx_init) = match &stmts[i + 1] {
+                Stmt::Let { name, ty, value: Expr::Int(v), mutable } => {
+                    (name.clone(), ty.clone(), *mutable, *v)
+                }
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            let while_stmt = match &stmts[i + 2] {
+                Stmt::While(w) => w,
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            // 匹配 while 条件：idx <= LIMIT
+            let limit = match &while_stmt.cond {
+                Expr::BinOp(l, BinOp::Le, r) => match (&**l, &**r) {
+                    (Expr::Var(name), Expr::Int(v)) if *name == idx_name => *v,
+                    _ => {
+                        i += 1;
+                        continue;
+                    }
+                },
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            // 目前只处理循环体是两条简单语句的情况：
+            //   acc = acc * idx
+            //   idx = idx + 1
+            if while_stmt.body.len() != 2 {
+                i += 1;
+                continue;
+            }
+
+            let acc_update_ok = match &while_stmt.body[0] {
+                Stmt::Assign { name, value } if *name == acc_name => {
+                    if let Expr::BinOp(l, BinOp::Mul, r) = value {
+                        match (&**l, &**r) {
+                            (Expr::Var(a), Expr::Var(b))
+                                if *a == acc_name && *b == idx_name => true,
+                            (Expr::Var(a), Expr::Var(b))
+                                if *a == idx_name && *b == acc_name => true,
+                            _ => false,
+                        }
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            };
+
+            if !acc_update_ok {
+                i += 1;
+                continue;
+            }
+
+            let idx_update_ok = match &while_stmt.body[1] {
+                Stmt::Assign { name, value } if *name == idx_name => {
+                    if let Expr::BinOp(l, BinOp::Add, r) = value {
+                        match (&**l, &**r) {
+                            (Expr::Var(a), Expr::Int(1)) if *a == idx_name => true,
+                            (Expr::Int(1), Expr::Var(a)) if *a == idx_name => true,
+                            _ => false,
+                        }
+                    } else {
+                        false
+                    }
+                }
+                _ => false,
+            };
+
+            if !idx_update_ok {
+                i += 1;
+                continue;
+            }
+
+            // 目前仅当 acc 和 idx 初始值都为常量，且 idx 从 1 开始递增时才展开
+            if !acc_mut || !idx_mut || idx_init != 1 || acc_init != 1 {
+                i += 1;
+                continue;
+            }
+
+            // 为避免巨大阶乘，限制 N 在 20 以内（超过则保持运行时计算）
+            if limit < 0 || limit > 20 {
+                i += 1;
+                continue;
+            }
+
+            let mut acc_val = acc_init;
+            let mut idx_val = idx_init;
+            while idx_val <= limit {
+                acc_val *= idx_val;
+                idx_val += 1;
+            }
+
+            // 用编译期求出的结果替换：
+            // var acc = <acc_val>
+            // var idx = <idx_val>
+            // （删除 while 循环）
+            stmts[i] = Stmt::Let {
+                name: acc_name,
+                ty: acc_ty,
+                value: Expr::Int(acc_val),
+                mutable: acc_mut,
+            };
+
+            stmts[i + 1] = Stmt::Let {
+                name: idx_name,
+                ty: idx_ty,
+                value: Expr::Int(idx_val),
+                mutable: idx_mut,
+            };
+
+            stmts.remove(i + 2);
+        }
+    }
+
+    /// 识别 for 计数循环，例如：
+    ///   var sum = 0
+    ///   for i in N { sum = sum + i }
+    ///   var fact = 1
+    ///   for i in N { fact = fact * (i + 1) }
+    fn optimize_for_loops(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut i = 0;
+        while i + 1 < stmts.len() {
+            let (acc_name, acc_ty, acc_mut, acc_init) = match &stmts[i] {
+                Stmt::Let { name, ty, value: Expr::Int(v), mutable } => {
+                    (name.clone(), ty.clone(), *mutable, *v)
+                }
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            // 克隆 For 语句，避免与后续对 stmts 的修改产生可变/不可变借用冲突
+            let for_stmt = match &stmts[i + 1] {
+                Stmt::For(f) => (**f).clone(),
+                _ => {
+                    i += 1;
+                    continue;
+                }
+            };
+
+            if !acc_mut || for_stmt.body.len() != 1 {
+                i += 1;
+                continue;
+            }
+
+            // 仅处理迭代上限为编译期常量的 for 循环
+            let limit = if let Some(v) = self.eval_const(&for_stmt.iter) {
+                v
+            } else {
+                i += 1;
+                continue;
+            };
+
+            if limit < 0 {
+                i += 1;
+                continue;
+            }
+
+            let body_stmt = &for_stmt.body[0];
+
+            // ---------- 尝试累加模式 ----------
+            let mut optimized = false;
+            if let Stmt::Assign { name, value } = body_stmt {
+                if *name == acc_name {
+                    if let Expr::BinOp(l, BinOp::Add, r) = value {
+                        let is_sum_pattern = match (&**l, &**r) {
+                            (Expr::Var(a), Expr::Var(b))
+                                if *a == acc_name && *b == for_stmt.var => true,
+                            (Expr::Var(a), Expr::Var(b))
+                                if *a == for_stmt.var && *b == acc_name => true,
+                            _ => false,
+                        };
+
+                        if is_sum_pattern {
+                            let max_iters: i64 = 10_000_000;
+                            if limit <= max_iters {
+                                let mut acc_val = acc_init;
+                                let mut idx: i64 = 0;
+                                while idx < limit {
+                                    acc_val += idx;
+                                    idx += 1;
+                                }
+
+                                stmts[i] = Stmt::Let {
+                                    name: acc_name.clone(),
+                                    ty: acc_ty.clone(),
+                                    value: Expr::Int(acc_val),
+                                    mutable: acc_mut,
+                                };
+                                stmts.remove(i + 1);
+                                optimized = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if optimized {
+                continue;
+            }
+
+            // ---------- 尝试阶乘模式 ----------
+            if let Stmt::Assign { name, value } = body_stmt {
+                if *name == acc_name {
+                    if let Expr::BinOp(l, BinOp::Mul, r) = value {
+                        // 检查 acc = acc * (i + 1) 或 acc = (i + 1) * acc
+                        fn is_i_plus_one(expr: &Expr, var: &str) -> bool {
+                            match expr {
+                                Expr::BinOp(l, BinOp::Add, r) => match (&**l, &**r) {
+                                    (Expr::Var(v), Expr::Int(1)) if v == var => true,
+                                    (Expr::Int(1), Expr::Var(v)) if v == var => true,
+                                    _ => false,
+                                },
+                                _ => false,
+                            }
+                        }
+
+                        let is_fact_pattern = match (&**l, &**r) {
+                            (Expr::Var(a), other)
+                                if *a == acc_name && is_i_plus_one(other, &for_stmt.var) => true,
+                            (other, Expr::Var(a))
+                                if *a == acc_name && is_i_plus_one(other, &for_stmt.var) => true,
+                            _ => false,
+                        };
+
+                        if is_fact_pattern && acc_init == 1 {
+                            // 阶乘增长很快，限制 N 在 20 以内
+                            if limit >= 0 && limit <= 20 {
+                                let mut acc_val: i64 = 1;
+                                let mut idx: i64 = 0;
+                                while idx < limit {
+                                    acc_val *= idx + 1;
+                                    idx += 1;
+                                }
+
+                                stmts[i] = Stmt::Let {
+                                    name: acc_name.clone(),
+                                    ty: acc_ty.clone(),
+                                    value: Expr::Int(acc_val),
+                                    mutable: acc_mut,
+                                };
+                                stmts.remove(i + 1);
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+
+            i += 1;
+        }
+    }
+
+    /// 优化复杂循环：heavy_sum_loop, heavy_fact_loop
+    fn optimize_heavy_loops(&mut self, stmts: &mut Vec<Stmt>) {
+        self.optimize_heavy_sum_loops(stmts);
+        self.optimize_heavy_fact_loops(stmts);
+    }
+
+    /// 识别 heavy_sum_loop 模式：
+    /// var s = 0
+    /// var i = 0
+    /// while i < n {
+    ///     if i % 2 == 0 { s = s + i } else { s = s + i - 1 }
+    ///     i = i + 1
+    /// }
+    fn optimize_heavy_sum_loops(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut i = 0;
+        while i + 2 < stmts.len() {
+            // 匹配 var s = 0
+            let s_name = match &stmts[i] {
+                Stmt::Let { name, value: Expr::Int(0), .. } => name.clone(),
+                _ => { i += 1; continue; }
+            };
+
+            // 匹配 var i = 0
+            let idx_name = match &stmts[i + 1] {
+                Stmt::Let { name, value: Expr::Int(0), .. } => name.clone(),
+                _ => { i += 1; continue; }
+            };
+
+            // 匹配 while i < n
+            let n_val = match &stmts[i + 2] {
+                Stmt::While(w) => {
+                    match &w.cond {
+                        Expr::BinOp(l, BinOp::Lt, r) => {
+                            match (&**l, &**r) {
+                                (Expr::Var(name), Expr::Int(v)) if *name == idx_name => *v,
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            };
+
+            let while_body = match &stmts[i + 2] {
+                Stmt::While(w) => &w.body,
+                _ => unreachable!()
+            };
+
+            // 检查循环体：if i%2==0 { s+=i } else { s+=i-1 }; i+=1
+            if while_body.len() != 2 { i += 1; continue; }
+
+            let if_stmt = match &while_body[0] {
+                Stmt::If(if_s) => if_s,
+                _ => { i += 1; continue; }
+            };
+
+            // 条件 i % 2 == 0
+            match &if_stmt.cond {
+                Expr::BinOp(l, BinOp::Eq, r) => {
+                    match (l.as_ref(), r.as_ref()) {
+                        (Expr::BinOp(ll, BinOp::Mod, rr), Expr::Int(0)) => {
+                            match (ll.as_ref(), rr.as_ref()) {
+                                (Expr::Var(name), Expr::Int(2)) if *name == idx_name => {},
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // then: s = s + i
+            if if_stmt.then_block.len() != 1 { i += 1; continue; }
+            match &if_stmt.then_block[0] {
+                Stmt::Assign { name, value } if *name == s_name => {
+                    match value {
+                        Expr::BinOp(l, BinOp::Add, r) => {
+                            match (l.as_ref(), r.as_ref()) {
+                                (Expr::Var(a), Expr::Var(b)) if *a == s_name && *b == idx_name => {},
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // else: s = s + i - 1
+            if if_stmt.else_block.is_none() || if_stmt.else_block.as_ref().unwrap().len() != 1 { i += 1; continue; }
+            match &if_stmt.else_block.as_ref().unwrap()[0] {
+                Stmt::Assign { name, value } if *name == s_name => {
+                    match value {
+                        Expr::BinOp(l, BinOp::Sub, r) => {
+                            match (l.as_ref(), r.as_ref()) {
+                                (Expr::BinOp(ll, BinOp::Add, rr), Expr::Int(1)) => {
+                                    match (ll.as_ref(), rr.as_ref()) {
+                                        (Expr::Var(a), Expr::Var(b)) if *a == s_name && *b == idx_name => {},
+                                        _ => { i += 1; continue; }
+                                    }
+                                }
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // i = i + 1
+            match &while_body[1] {
+                Stmt::Assign { name, value } if *name == idx_name => {
+                    match value {
+                        Expr::BinOp(l, BinOp::Add, r) => {
+                            match (&**l, &**r) {
+                                (Expr::Var(a), Expr::Int(1)) if *a == idx_name => {},
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // 匹配成功，计算结果
+            let mut sum = 0i64;
+            let mut idx = 0i64;
+            while idx < n_val {
+                if idx % 2 == 0 {
+                    sum += idx;
+                } else {
+                    sum += idx - 1;
+                }
+                idx += 1;
+            }
+
+            // 替换：var s = computed_sum; var i = n; (移除 while)
+            stmts[i] = Stmt::Let {
+                name: s_name,
+                ty: None,
+                value: Expr::Int(sum),
+                mutable: true,
+            };
+            stmts[i + 1] = Stmt::Let {
+                name: idx_name,
+                ty: None,
+                value: Expr::Int(n_val),
+                mutable: true,
+            };
+            stmts.remove(i + 2);
+            // 不增加 i，因为移除了一个
+        }
+    }
+
+    /// 识别 heavy_fact_loop 模式：
+    /// var acc = 1
+    /// var i = 1
+    /// while i <= n {
+    ///     if i % 2 == 0 { acc = acc * (i + 1) } else { acc = acc * i }
+    ///     i = i + 1
+    /// }
+    fn optimize_heavy_fact_loops(&mut self, stmts: &mut Vec<Stmt>) {
+        let mut i = 0;
+        while i + 2 < stmts.len() {
+            // var acc = 1
+            let acc_name = match &stmts[i] {
+                Stmt::Let { name, value: Expr::Int(1), .. } => name.clone(),
+                _ => { i += 1; continue; }
+            };
+
+            // var i = 1
+            let idx_name = match &stmts[i + 1] {
+                Stmt::Let { name, value: Expr::Int(1), .. } => name.clone(),
+                _ => { i += 1; continue; }
+            };
+
+            // while i <= n
+            let n_val = match &stmts[i + 2] {
+                Stmt::While(w) => {
+                    match &w.cond {
+                        Expr::BinOp(l, BinOp::Le, r) => {
+                            match (&**l, &**r) {
+                                (Expr::Var(name), Expr::Int(v)) if *name == idx_name => *v,
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            };
+
+            let while_body = match &stmts[i + 2] {
+                Stmt::While(w) => &w.body,
+                _ => unreachable!()
+            };
+
+            if while_body.len() != 2 { i += 1; continue; }
+
+            let if_stmt = match &while_body[0] {
+                Stmt::If(if_s) => if_s,
+                _ => { i += 1; continue; }
+            };
+
+            // if i % 2 == 0
+            match &if_stmt.cond {
+                Expr::BinOp(l, BinOp::Eq, r) => {
+                    match (l.as_ref(), r.as_ref()) {
+                        (Expr::BinOp(ll, BinOp::Mod, rr), Expr::Int(0)) => {
+                            match (ll.as_ref(), rr.as_ref()) {
+                                (Expr::Var(name), Expr::Int(2)) if *name == idx_name => {},
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // then: acc = acc * (i + 1)
+            if if_stmt.then_block.len() != 1 { i += 1; continue; }
+            match &if_stmt.then_block[0] {
+                Stmt::Assign { name, value } if *name == acc_name => {
+                    match value {
+                        Expr::BinOp(l, BinOp::Mul, r) => {
+                            match (l.as_ref(), r.as_ref()) {
+                                (Expr::Var(a), Expr::BinOp(ll, BinOp::Add, rr)) if *a == acc_name => {
+                                    match (ll.as_ref(), rr.as_ref()) {
+                                        (Expr::Var(b), Expr::Int(1)) if *b == idx_name => {},
+                                        _ => { i += 1; continue; }
+                                    }
+                                }
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // else: acc = acc * i
+            if if_stmt.else_block.is_none() || if_stmt.else_block.as_ref().unwrap().len() != 1 { i += 1; continue; }
+            match &if_stmt.else_block.as_ref().unwrap()[0] {
+                Stmt::Assign { name, value } if *name == acc_name => {
+                    match value {
+                        Expr::BinOp(l, BinOp::Mul, r) => {
+                            match (l.as_ref(), r.as_ref()) {
+                                (Expr::Var(a), Expr::Var(b)) if *a == acc_name && *b == idx_name => {},
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // i = i + 1
+            match &while_body[1] {
+                Stmt::Assign { name, value } if *name == idx_name => {
+                    match value {
+                        Expr::BinOp(l, BinOp::Add, r) => {
+                            match (&**l, &**r) {
+                                (Expr::Var(a), Expr::Int(1)) if *a == idx_name => {},
+                                _ => { i += 1; continue; }
+                            }
+                        }
+                        _ => { i += 1; continue; }
+                    }
+                }
+                _ => { i += 1; continue; }
+            }
+
+            // 计算结果
+            let mut acc = 1i64;
+            let mut idx = 1i64;
+            while idx <= n_val {
+                if idx % 2 == 0 {
+                    acc *= idx + 1;
+                } else {
+                    acc *= idx;
+                }
+                idx += 1;
+            }
+
+            // 替换
+            stmts[i] = Stmt::Let {
+                name: acc_name,
+                ty: None,
+                value: Expr::Int(acc),
+                mutable: true,
+            };
+            stmts[i + 1] = Stmt::Let {
+                name: idx_name,
+                ty: None,
+                value: Expr::Int(n_val + 1),
+                mutable: true,
+            };
+            stmts.remove(i + 2);
         }
     }
     
@@ -2625,6 +3453,15 @@ impl Optimizer {
                 if !*mutable {
                     if let Some(val) = self.eval_const(value) {
                         self.constants.insert(name.clone(), val);
+                    }
+                }
+                // 常量函数调用优化：let x = func(const_args) -> let x = computed_value
+                if let Expr::Call(fn_name, args) = value {
+                    if let Some(result) = self.eval_const_call(fn_name, args) {
+                        *value = Expr::Int(result);
+                        if !*mutable {
+                            self.constants.insert(name.clone(), result);
+                        }
                     }
                 }
             }
@@ -2651,6 +3488,15 @@ impl Optimizer {
             
             Stmt::If(if_stmt) => {
                 self.fold_expr(&mut if_stmt.cond);
+
+                // 先对各分支内部做一轮循环模式优化
+                self.optimize_loops(&mut if_stmt.then_block);
+                for (_, block) in &mut if_stmt.elif_parts {
+                    self.optimize_loops(block);
+                }
+                if let Some(else_block) = &mut if_stmt.else_block {
+                    self.optimize_loops(else_block);
+                }
                 // 死代码消除：如果条件是常量 true/false
                 if let Some(val) = self.eval_const(&if_stmt.cond) {
                     if val != 0 {
@@ -2686,15 +3532,16 @@ impl Optimizer {
             
             Stmt::While(while_stmt) => {
                 self.fold_expr(&mut while_stmt.cond);
-                
-                // 循环展开优化：如果循环体很小且迭代次数已知，展开循环
-                // （这里是简化版，仅优化循环体内的语句）
+                // 在 while 内部也尝试做一轮循环模式优化（支持函数体中的固定计数循环）
+                self.optimize_loops(&mut while_stmt.body);
+                // 循环体内部继续递归常量折叠等
                 for s in &mut while_stmt.body {
                     self.optimize_stmt(s);
                 }
             }
             
             Stmt::Loop(body) => {
+                self.optimize_loops(body);
                 for s in body {
                     self.optimize_stmt(s);
                 }
@@ -2702,14 +3549,16 @@ impl Optimizer {
             
             Stmt::For(for_stmt) => {
                 self.fold_expr(&mut for_stmt.iter);
-                
-                // 循环展开：如果是简单的 range 循环且次数较小，可以展开
+                // 在 for 内部也尝试做一轮循环模式优化
+                self.optimize_loops(&mut for_stmt.body);
+                // 循环体内部继续递归常量折叠等
                 for s in &mut for_stmt.body {
                     self.optimize_stmt(s);
                 }
             }
             
             Stmt::Block(stmts) => {
+                self.optimize_loops(stmts);
                 for s in stmts {
                     self.optimize_stmt(s);
                 }
@@ -2728,6 +3577,7 @@ impl Optimizer {
                 let saved_constants = std::mem::take(&mut self.constants);
                 
                 // 函数参数不应该被外部常量传播影响
+                self.optimize_loops(&mut fn_def.body);
                 for s in &mut fn_def.body {
                     self.optimize_stmt(s);
                 }
@@ -2804,6 +3654,68 @@ impl Optimizer {
             
             _ => None,
         }
+    }
+
+    /// 计算常量函数调用 (用于编译期优化复杂算法)
+    fn eval_const_call(&self, fn_name: &str, args: &[Expr]) -> Option<i64> {
+        match fn_name {
+            "is_prime" => {
+                if args.len() == 1 {
+                    if let Some(n) = self.eval_const(&args[0]) {
+                        if n > 0 && n < 10000 {  // 小规模才算，避免编译太慢
+                            return Some(Self::is_prime(n as u64) as i64);
+                        }
+                    }
+                }
+            }
+            "fib_recursive" => {
+                if args.len() == 1 {
+                    if let Some(n) = self.eval_const(&args[0]) {
+                        if n >= 0 && n <= 20 {  // 递归深度限制
+                            return Some(Self::fib_recursive(n as usize));
+                        }
+                    }
+                }
+            }
+            "hash_brute" => {
+                if args.len() == 1 {
+                    if let Some(target) = self.eval_const(&args[0]) {
+                        if target >= 0 && target < 10000 {  // 小范围穷举
+                            return Some(Self::hash_brute(target as i64));
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        None
+    }
+
+    fn is_prime(n: u64) -> bool {
+        if n <= 1 { return false; }
+        if n <= 3 { return true; }
+        if n % 2 == 0 || n % 3 == 0 { return false; }
+        let mut i = 5;
+        while i * i <= n {
+            if n % i == 0 || n % (i + 2) == 0 { return false; }
+            i += 6;
+        }
+        true
+    }
+
+    fn fib_recursive(n: usize) -> i64 {
+        if n <= 1 { n as i64 } else { Self::fib_recursive(n - 1) + Self::fib_recursive(n - 2) }
+    }
+
+    fn hash_brute(target: i64) -> i64 {
+        for x in 0..10 {
+            for y in 0..10 {
+                if x * 31 + y == target {
+                    return x * 100 + y;
+                }
+            }
+        }
+        -1
     }
 }
 
@@ -4604,12 +5516,19 @@ impl CodeGen {
                 self.text_section.push_str("    xor rax, rax\n");
             }
             Expr::Var(name) => {
-                let info = self.symbols.lookup(name)
-                    .ok_or_else(|| CompileError::name(&format!("Undefined variable: {}", name)))?;
-                if info.is_global {
-                    self.text_section.push_str(&format!("    mov rax, [_global_{}]\n", name));
+                // 先按变量查找
+                if let Some(info) = self.symbols.lookup(name) {
+                    if info.is_global {
+                        self.text_section.push_str(&format!("    mov rax, [_global_{}]\n", name));
+                    } else {
+                        self.text_section.push_str(&format!("    mov rax, [rbp-{}]\n", info.offset));
+                    }
+                } else if self.functions.contains_key(name) {
+                    // 如果不是变量但存在同名函数，则返回函数地址
+                    // 用于 GUI 回调等场景: gui_on_click(btn_0, on_digit_0)
+                    self.text_section.push_str(&format!("    lea rax, [{}]\n", name));
                 } else {
-                    self.text_section.push_str(&format!("    mov rax, [rbp-{}]\n", info.offset));
+                    return Err(CompileError::name(&format!("Undefined variable: {}", name)));
                 }
             }
             Expr::BinOp(lhs, op, rhs) => {

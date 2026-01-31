@@ -1,8 +1,0 @@
-// test-loop.sm: test loop with break
-fn main {
-    loop {
-        call Example.Print "in loop"
-        break
-    }
-    call Example.Print "after loop"
-}

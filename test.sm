@@ -1,0 +1,3 @@
+fn main
+    call print "Hello, Slime!"
+end

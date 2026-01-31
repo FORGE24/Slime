@@ -1,0 +1,35 @@
+# Slime build configuration
+
+[package]
+name = "example"
+version = "1.0.0"
+description = "Example Slime project"
+authors = ["Author Name <author@example.com>"]
+
+[build]
+# Input file or directory
+input = "src/main.sm"
+
+# Output file
+output = "bin/main.exe"
+
+# Target platform (x86_64-windows, x86_64-linux, x86_64-macos)
+target = "x86_64-windows"
+
+# Optimization level (0, 1, 2, 3)
+optimization = 2
+
+# Enable debug symbols
+debug = false
+
+# Include paths for imports
+include_paths = ["lib"]
+
+[features]
+# Feature flags
+default = ["std"]
+std = true
+
+[dependencies]
+# External dependencies
+# example = "1.0.0"

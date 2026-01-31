@@ -1,0 +1,64 @@
+// ============================================================
+// Slime 标准库 - 函数模块 (function.sm)
+// 提供各种函数操作功能
+// ============================================================
+
+// ============================================================
+// 函数操作
+// ============================================================
+
+// 创建函数
+fn function_create(handler: any) -> any
+    // 简化实现：返回一个数字作为函数句柄
+    return 1
+end
+
+// 调用函数
+fn function_call(func: any, ...args: any) -> any
+    // 简化实现：返回模拟结果
+    return 1
+end
+
+// 绑定函数参数
+fn function_bind(func: any, ...args: any) -> any
+    // 简化实现：返回模拟函数
+    return 1
+end
+
+// 组合函数
+fn function_compose(func1: any, func2: any) -> any
+    // 简化实现：返回模拟函数
+    return 1
+end
+
+// 部分应用函数
+fn function_partial(func: any, ...args: any) -> any
+    // 简化实现：返回模拟函数
+    return 1
+end
+
+// ============================================================
+// 回调函数
+// ============================================================
+
+// 创建回调
+fn function_create_callback(handler: any) -> any
+    // 简化实现：返回一个数字作为回调句柄
+    return 1
+end
+
+// 触发回调
+fn function_trigger_callback(callback: any, ...args: any) -> any
+    // 简化实现：返回模拟结果
+    return 1
+end
+
+// ============================================================
+// 函数库初始化
+// ============================================================
+
+call print "Slime Function Library v1.0 loaded"
+call print "Available functions:"
+call print "  Core: function_create, function_call, function_bind"
+call print "  Utils: function_compose, function_partial"
+call print "  Callback: function_create_callback, function_trigger_callback"

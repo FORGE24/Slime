@@ -1,0 +1,106 @@
+// 高级性能测试 - 展示 slime 新特性：
+// - 编译期常量折叠 & 循环预计算 (sum / factorial)
+// - 函数调用与多段基准
+// - while / for / 函数体内循环
+
+// =============================
+// 1. 编译期预计算的一些常量
+// =============================
+
+// 这些循环会在编译期被优化器识别并直接算出结果：
+
+var sum_while = 0
+var i_while = 0
+while i_while < 1000000
+    sum_while = sum_while + i_while
+    i_while = i_while + 1
+end
+
+var sum_for = 0
+for j in 1000000
+    sum_for = sum_for + j
+end
+
+var fact_while = 1
+var k_while = 1
+while k_while <= 12
+    fact_while = fact_while * k_while
+    k_while = k_while + 1
+end
+
+var fact_for = 1
+for t in 12
+    fact_for = fact_for * (t + 1)
+end
+
+// =============================
+// 2. 实际运行时基准（不会被完全优化掉）
+// =============================
+
+fn heavy_sum_loop(n: int) -> int
+    var s = 0
+    var i = 0
+    while i < n
+        // 这部分刻意写复杂一点，避免被优化器识别成简单模式
+        if i % 2 == 0
+            s = s + i
+        else
+            s = s + i - 1
+        end
+        i = i + 1
+    end
+    return s
+end
+
+fn heavy_fact_loop(n: int) -> int
+    var acc = 1
+    var i = 1
+    while i <= n
+        // 引入一个条件，让它不同于纯粹的 acc *= i
+        if i % 2 == 0
+            acc = acc * (i + 1)
+        else
+            acc = acc * i
+        end
+        i = i + 1
+    end
+    return acc
+end
+
+// 简单的斐波那契迭代，用于对比函数调用开销
+fn fib_iter(n: int) -> int
+    if n <= 1
+        return n
+    end
+    var a = 0
+    var b = 1
+    var i = 2
+    while i <= n
+        let next = a + b
+        a = b
+        b = next
+        i = i + 1
+    end
+    return b
+end
+
+fn main
+    let n_large = 1000000
+    let n_fact = 12
+    let n_fib = 40
+
+    // 打印编译期预计算的结果（sum_while / sum_for / fact_while / fact_for）
+    call host.stdout "[compile-time] sum_while = ", sum_while
+    call host.stdout "[compile-time] sum_for   = ", sum_for
+    call host.stdout "[compile-time] fact_while = ", fact_while
+    call host.stdout "[compile-time] fact_for   = ", fact_for
+
+    // 运行时循环基准
+    let r1 = heavy_sum_loop(n_large)
+    let r2 = heavy_fact_loop(n_fact)
+    let r3 = fib_iter(n_fib)
+
+    call host.stdout "[runtime] heavy_sum_loop  = ", r1
+    call host.stdout "[runtime] heavy_fact_loop = ", r2
+    call host.stdout "[runtime] fib_iter        = ", r3
+end

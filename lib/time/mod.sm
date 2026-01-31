@@ -1,0 +1,53 @@
+// Time library for Slime
+
+// Time structure
+export struct Instant {
+    // Implementation will be provided by compiler
+}
+
+// Duration structure
+export struct Duration {
+    // Implementation will be provided by compiler
+}
+
+// Get current time
+export fn now() -> Instant {
+    // Implementation will be provided by compiler
+    return Instant {};
+}
+
+// Create duration from seconds
+export fn duration_from_secs(secs: f64) -> Duration {
+    // Implementation will be provided by compiler
+    return Duration {};
+}
+
+// Create duration from milliseconds
+export fn duration_from_millis(millis: u64) -> Duration {
+    // Implementation will be provided by compiler
+    return Duration {};
+}
+
+// Add duration to instant
+export fn instant_add(instant: Instant, duration: Duration) -> Instant {
+    // Implementation will be provided by compiler
+    return instant;
+}
+
+// Subtract duration from instant
+export fn instant_sub(instant: Instant, duration: Duration) -> Instant {
+    // Implementation will be provided by compiler
+    return instant;
+}
+
+// Get duration between two instants
+export fn instant_duration_between(start: Instant, end: Instant) -> Duration {
+    // Implementation will be provided by compiler
+    return Duration {};
+}
+
+// Format instant as string
+export fn format_instant(instant: Instant, fmt: str) -> str {
+    // Implementation will be provided by compiler
+    return "";
+}
