@@ -1,0 +1,93 @@
+// demo.sm — slime lang 新语法演示
+// 目标: Rust版Python — 编译型、语法易懂、自动内存管理
+
+fn main {
+    // ==================== 变量声明 ====================
+    // let = 不可变（推荐，类似Python的普通变量）
+    // var = 可变（需要修改时使用）
+    
+    let message = "Hello, Slime Lang!"
+    print message
+    
+    // 带类型注解的变量
+    let x: int = 42
+    let pi: float = 3.14
+    let flag: bool = true
+    
+    print "x =", x
+    print "pi =", pi
+    print "flag =", flag
+    
+    // ==================== 表达式求值 ====================
+    let a = 10
+    let b = 3
+    
+    print "算术运算:"
+    print "a + b =", a + b
+    print "a - b =", a - b
+    print "a * b =", a * b
+    print "a / b =", a / b
+    print "a % b =", a % b
+    
+    print "比较运算:"
+    print "a > b:", a > b
+    print "a == b:", a == b
+    print "a != b:", a != b
+    
+    // ==================== 可变变量 ====================
+    var counter = 0
+    print "初始 counter =", counter
+    
+    counter = 5
+    print "赋值后 counter =", counter
+    
+    counter += 10
+    print "累加后 counter =", counter
+    
+    // ==================== 控制流 ====================
+    print "--- 条件判断 ---"
+    let score = 85
+    
+    if score >= 90 {
+        print "优秀!"
+    } elif score >= 60 {
+        print "及格"
+    } else {
+        print "需要努力"
+    }
+    
+    // ==================== 循环 ====================
+    print "--- while 循环 ---"
+    var i = 0
+    while i < 5 {
+        print "i =", i
+        i += 1
+    }
+    
+    print "--- for 循环 ---"
+    for j in 5 {
+        print "j =", j
+    }
+    
+    // ==================== 函数调用 ====================
+    let result = add(10, 20)
+    print "add(10, 20) =", result
+    
+    let fact = factorial(5)
+    print "factorial(5) =", fact
+    
+    // ==================== 完成 ====================
+    print "程序执行完毕!"
+}
+
+// 自定义函数
+fn add(a: int, b: int) -> int {
+    return a + b
+}
+
+fn factorial(n: int) -> int {
+    if n <= 1 {
+        return 1
+    }
+    return n * factorial(n - 1)
+}

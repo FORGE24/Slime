@@ -1,0 +1,239 @@
+// ============================================================
+// Sreyt GUI Library - Widget System  
+// ============================================================
+// 控件系统：Button, Label, Entry, Canvas等基础组件
+// 基于接口的组件化设计 + 继承层次结构
+// ============================================================
+
+// ============================================================ 
+// 控件基础接口
+// ============================================================
+
+def static.interface "Sreyt.Widget.Create" any Out "host.widget"
+def static.interface "Sreyt.Widget.Destroy" any Out "host.widget" 
+def static.interface "Sreyt.Widget.Show" any Out "host.widget"
+def static.interface "Sreyt.Widget.Hide" any Out "host.widget"
+def static.interface "Sreyt.Widget.SetPosition" any Out "host.widget"
+def static.interface "Sreyt.Widget.SetSize" any Out "host.widget"
+def static.interface "Sreyt.Widget.SetParent" any Out "host.widget"
+
+// ============================================================
+// 全局控件管理
+// ============================================================
+
+var widget_count = 0
+var widgets_created = 0
+
+// 控件类型常量
+let WIDGET_LABEL = 1
+let WIDGET_BUTTON = 2  
+let WIDGET_ENTRY = 3
+let WIDGET_CANVAS = 4
+let WIDGET_FRAME = 5
+
+// ============================================================
+// 基础控件：Label（文本标签）
+// ============================================================
+
+fn label_create(parent_window, text, x, y)
+    widget_count = widget_count + 1
+    widgets_created = widgets_created + 1
+    
+    let widget_id = widget_count
+    
+    call Sreyt.Widget.Create, widget_id, WIDGET_LABEL
+    call Sreyt.Widget.SetParent, widget_id, parent_window
+    call Sreyt.Widget.SetPosition, widget_id, x, y
+    
+    call print "Sreyt: Created Label #", widget_id, " with text '", text, "'"
+    call print "Sreyt: Position (", x, ",", y, ") in window ", parent_window
+    
+    return widget_id
+end
+
+fn label_set_text(label_id, text)
+    call print "Sreyt: Setting label #", label_id, " text to '", text, "'"
+    // 实际实现会调用系统接口更新显示
+end
+
+fn label_set_color(label_id, color)
+    call Sreyt.Graphics.SetColor, color
+    call print "Sreyt: Setting label #", label_id, " color to ", color
+end
+
+// ============================================================
+// 交互控件：Button（按钮）  
+// ============================================================
+
+fn button_create(parent_window, text, x, y, width, height)
+    widget_count = widget_count + 1
+    widgets_created = widgets_created + 1
+    
+    let button_id = widget_count
+    
+    call Sreyt.Widget.Create, button_id, WIDGET_BUTTON
+    call Sreyt.Widget.SetParent, button_id, parent_window
+    call Sreyt.Widget.SetPosition, button_id, x, y
+    call Sreyt.Widget.SetSize, button_id, width, height
+    
+    call print "Sreyt: Created Button #", button_id, " '", text, "'"
+    call print "Sreyt: Size ", width, "x", height, " at (", x, ",", y, ")"
+    
+    return button_id
+end
+
+fn button_set_text(button_id, text)
+    call print "Sreyt: Setting button #", button_id, " text to '", text, "'"
+end
+
+fn button_on_click(button_id, callback_func)
+    call on_click, button_id, callback_func
+    call print "Sreyt: Button #", button_id, " click handler registered"
+end
+
+// ============================================================
+// 输入控件：Entry（文本输入框）
+// ============================================================
+
+fn entry_create(parent_window, x, y, width, height) 
+    widget_count = widget_count + 1
+    widgets_created = widgets_created + 1
+    
+    let entry_id = widget_count
+    
+    call Sreyt.Widget.Create, entry_id, WIDGET_ENTRY
+    call Sreyt.Widget.SetParent, entry_id, parent_window
+    call Sreyt.Widget.SetPosition, entry_id, x, y
+    call Sreyt.Widget.SetSize, entry_id, width, height
+    
+    call print "Sreyt: Created Entry #", entry_id
+    call print "Sreyt: Input field ", width, "x", height, " at (", x, ",", y, ")"
+    
+    return entry_id
+end
+
+fn entry_get_text(entry_id)
+    call print "Sreyt: Getting text from Entry #", entry_id
+    // 简化：返回模拟文本
+    return 42  // 实际应返回字符串
+end
+
+fn entry_set_text(entry_id, text)
+    call print "Sreyt: Setting Entry #", entry_id, " text to '", text, "'"
+end
+
+fn entry_clear(entry_id)
+    call print "Sreyt: Clearing Entry #", entry_id
+end
+
+// ============================================================
+// 绘图控件：Canvas（画布）
+// ============================================================
+
+fn canvas_create(parent_window, x, y, width, height)
+    widget_count = widget_count + 1
+    widgets_created = widgets_created + 1
+    
+    let canvas_id = widget_count
+    
+    call Sreyt.Widget.Create, canvas_id, WIDGET_CANVAS
+    call Sreyt.Widget.SetParent, canvas_id, parent_window  
+    call Sreyt.Widget.SetPosition, canvas_id, x, y
+    call Sreyt.Widget.SetSize, canvas_id, width, height
+    
+    call print "Sreyt: Created Canvas #", canvas_id
+    call print "Sreyt: Drawing area ", width, "x", height, " at (", x, ",", y, ")"
+    
+    return canvas_id
+end
+
+fn canvas_clear(canvas_id)
+    call print "Sreyt: Clearing canvas #", canvas_id
+end
+
+fn canvas_draw_rect(canvas_id, x, y, width, height, color)
+    call Sreyt.Graphics.SetColor, color
+    call Sreyt.Graphics.DrawRect, x, y, width, height
+    call print "Sreyt: Drew rectangle on canvas #", canvas_id
+    call print "Sreyt: Rect (", x, ",", y, ") ", width, "x", height, " color=", color
+end
+
+fn canvas_draw_text(canvas_id, text, x, y, color)
+    call Sreyt.Graphics.SetColor, color 
+    call Sreyt.Graphics.DrawText, text, x, y
+    call print "Sreyt: Drew text '", text, "' on canvas #", canvas_id, " at (", x, ",", y, ")"
+end
+
+fn canvas_draw_line(canvas_id, x1, y1, x2, y2, color)
+    call Sreyt.Graphics.SetColor, color
+    call Sreyt.Graphics.DrawLine, x1, y1, x2, y2
+    call print "Sreyt: Drew line on canvas #", canvas_id
+    call print "Sreyt: Line (", x1, ",", y1, ") to (", x2, ",", y2, ") color=", color
+end
+
+// ============================================================
+// 容器控件：Frame（框架布局）
+// ============================================================
+
+fn frame_create(parent_window, x, y, width, height)
+    widget_count = widget_count + 1
+    widgets_created = widgets_created + 1
+    
+    let frame_id = widget_count
+    
+    call Sreyt.Widget.Create, frame_id, WIDGET_FRAME
+    call Sreyt.Widget.SetParent, frame_id, parent_window
+    call Sreyt.Widget.SetPosition, frame_id, x, y
+    call Sreyt.Widget.SetSize, frame_id, width, height
+    
+    call print "Sreyt: Created Frame #", frame_id
+    call print "Sreyt: Container ", width, "x", height, " at (", x, ",", y, ")"
+    
+    return frame_id
+end
+
+// ============================================================
+// 通用控件操作
+// ============================================================
+
+fn widget_show(widget_id)
+    call Sreyt.Widget.Show, widget_id
+    call print "Sreyt: Showing widget #", widget_id
+end
+
+fn widget_hide(widget_id)
+    call Sreyt.Widget.Hide, widget_id  
+    call print "Sreyt: Hiding widget #", widget_id
+end
+
+fn widget_destroy(widget_id)
+    call Sreyt.Widget.Destroy, widget_id
+    call print "Sreyt: Destroyed widget #", widget_id
+    widgets_created = widgets_created - 1
+end
+
+fn widget_move(widget_id, x, y)
+    call Sreyt.Widget.SetPosition, widget_id, x, y
+    call print "Sreyt: Moved widget #", widget_id, " to (", x, ",", y, ")"
+end
+
+fn widget_resize(widget_id, width, height)
+    call Sreyt.Widget.SetSize, widget_id, width, height
+    call print "Sreyt: Resized widget #", widget_id, " to ", width, "x", height
+end
+
+// ============================================================
+// 控件系统状态查询
+// ============================================================
+
+fn widgets_get_count()
+    return widgets_created
+end
+
+fn widgets_list_active()
+    call print "Sreyt: Active widgets: ", widgets_created
+    call print "Sreyt: Total created: ", widget_count
+end
+
+call print "Sreyt Widget System - Loaded successfully"
+call print "Available widgets: Label, Button, Entry, Canvas, Frame"

@@ -1,0 +1,74 @@
+// ============================================
+// mathlib.sm - 数学工具库模块
+// 演示 Slime 模块系统的导出功能
+// ============================================
+
+// 公开函数: 使用 pub 关键字导出
+pub fn add(a: int, b: int) -> int {
+    return a + b
+}
+
+pub fn sub(a: int, b: int) -> int {
+    return a - b
+}
+
+pub fn mul(a: int, b: int) -> int {
+    return a * b
+}
+
+pub fn div(a: int, b: int) -> int {
+    if b == 0 {
+        return 0  // 简单错误处理
+    }
+    return a / b
+}
+
+// 公开函数: 阶乘
+pub fn factorial(n: int) -> int {
+    if n <= 1 {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+
+// 公开函数: 幂运算
+pub fn power(base: int, exp: int) -> int {
+    if exp == 0 {
+        return 1
+    }
+    var result = 1
+    var i = 0
+    while i < exp {
+        result = result * base
+        i += 1
+    }
+    return result
+}
+
+// 公开函数: 绝对值
+pub fn abs(n: int) -> int {
+    if n < 0 {
+        return 0 - n
+    }
+    return n
+}
+
+// 公开函数: 最大值
+pub fn max(a: int, b: int) -> int {
+    if a > b {
+        return a
+    }
+    return b
+}
+
+// 公开函数: 最小值
+pub fn min(a: int, b: int) -> int {
+    if a < b {
+        return a
+    }
+    return b
+}
+
+// 公开常量 (通过 pub let)
+pub let PI_INT = 3
+pub let E_INT = 2

@@ -1,0 +1,68 @@
+// =================================================================
+// Slime CNB (C Native Bridge) Demo
+// =================================================================
+// 展示如何从 Slime 调用 C/C++ 原生函数
+// 编译: slimec cnb-demo.sm -o cnb-demo.asm --target windows
+// 链接: nasm -fwin64 cnb-demo.asm -o cnb-demo.obj
+//       golink /entry Start cnb-demo.obj kernel32.dll user32.dll
+// =================================================================
+
+// ============================================================
+// 声明外部 C 函数 (Windows API)
+// ============================================================
+
+// MessageBoxA - Windows 消息框
+extern "stdcall" fn MessageBoxA(hwnd: uintptr, text: cstr, caption: cstr, flags: uint) -> int
+
+// GetTickCount - 获取系统时间
+extern "stdcall" fn GetTickCount() -> u32
+
+// Beep - 蜂鸣器
+extern "stdcall" fn Beep(frequency: u32, duration: u32) -> int
+
+// Sleep - 暂停执行
+extern "stdcall" fn Sleep(milliseconds: u32) -> void
+
+// ============================================================
+// 声明外部结构体
+// ============================================================
+
+extern struct POINT {
+    x: int,
+    y: int
+}
+
+extern struct RECT {
+    left: int,
+    top: int,
+    right: int,
+    bottom: int
+}
+
+// ============================================================
+// 主程序
+// ============================================================
+
+// 显示欢迎消息
+MessageBoxA(0, "Welcome to Slime CNB!", "Hello from C", 0)
+
+// 获取启动时间
+let start_time = GetTickCount()
+print "Start time:", start_time
+
+// 发出蜂鸣
+Beep(800, 200)
+
+// 暂停 500ms
+Sleep(500)
+
+// 再次蜂鸣
+Beep(1000, 200)
+
+// 计算经过时间
+let end_time = GetTickCount()
+let elapsed = end_time - start_time
+print "Elapsed time:", elapsed, "ms"
+
+// 显示完成消息
+MessageBoxA(0, "CNB Demo Complete!", "Success", 0)

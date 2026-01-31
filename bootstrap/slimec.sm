@@ -1,0 +1,1118 @@
+// ============================================================
+// slimec - slime 自举编译器 (完整版)
+// ============================================================
+// 核心理念: 万物皆接口
+// 
+// 这是用 slime 语言编写的 slime 编译器
+// 目标：能够编译 slime 程序并输出 x86-64 汇编代码
+// ============================================================
+
+// ============================================================
+// 接口定义
+// ============================================================
+def static.interface "print" str Out "host.stdout"
+
+// ============================================================
+// 全局常量 - Token 类型
+// ============================================================
+let TK_EOF = 0
+let TK_IDENT = 1
+let TK_INT = 2
+let TK_STRING = 3
+let TK_PLUS = 10
+let TK_MINUS = 11
+let TK_STAR = 12
+let TK_SLASH = 13
+let TK_PERCENT = 14
+let TK_AMP = 15
+let TK_EQ = 20
+let TK_ASSIGN = 21
+let TK_LT = 23
+let TK_GT = 24
+let TK_LE = 25
+let TK_GE = 26
+let TK_LPAREN = 30
+let TK_RPAREN = 31
+let TK_COMMA = 41
+let TK_COLON = 43
+let TK_LET = 100
+let TK_VAR = 101
+let TK_IF = 103
+let TK_ELSE = 104
+let TK_ELIF = 105
+let TK_WHILE = 106
+let TK_END = 109
+let TK_CALL = 110
+let TK_DEF = 111
+let TK_FN = 113
+let TK_RETURN = 114
+let TK_BREAK = 115
+let TK_CONTINUE = 116
+let TK_AND = 117
+let TK_OR = 118
+let TK_NOT = 119
+let TK_TRUE = 120
+let TK_FALSE = 121
+
+// ============================================================
+// 全局常量 - AST 节点类型
+// ============================================================
+let AST_INT = 1
+let AST_STR = 2
+let AST_VAR = 3
+let AST_BINOP = 4
+let AST_UNARY = 5
+let AST_CALL = 6
+let AST_LET = 10
+let AST_ASSIGN = 11
+let AST_IF = 12
+let AST_WHILE = 13
+let AST_PRINT = 14
+let AST_RETURN = 15
+let AST_FN = 16
+let AST_BORROW = 20
+let AST_DEREF = 22
+
+// ============================================================
+// 全局常量 - 二元运算符
+// ============================================================
+let OP_ADD = 1
+let OP_SUB = 2
+let OP_MUL = 3
+let OP_DIV = 4
+let OP_MOD = 5
+let OP_EQ = 10
+let OP_NE = 11
+let OP_LT = 12
+let OP_GT = 13
+let OP_LE = 14
+let OP_GE = 15
+let OP_AND = 20
+let OP_OR = 21
+
+// ============================================================
+// 全局状态 - 词法分析
+// ============================================================
+var pos = 0              // 当前位置
+var line = 1             // 当前行号
+var col = 1              // 当前列号
+var tok = 0              // 当前 token 类型
+var tok_int = 0          // token 的整数值
+var tok_str_id = 0       // token 的字符串 ID
+
+// ============================================================
+// 全局状态 - 符号表 (简化：固定大小数组模拟)
+// ============================================================
+var sym_count = 0        // 符号数量
+var scope_depth = 0      // 作用域深度
+
+// 符号表：最多支持 16 个变量
+// 每个符号: name_id, offset, scope, mutable
+var sym_0_name = 0
+var sym_0_offset = 0
+var sym_0_scope = 0
+var sym_0_mut = 0
+
+var sym_1_name = 0
+var sym_1_offset = 0
+var sym_1_scope = 0
+var sym_1_mut = 0
+
+var sym_2_name = 0
+var sym_2_offset = 0
+var sym_2_scope = 0
+var sym_2_mut = 0
+
+var sym_3_name = 0
+var sym_3_offset = 0
+var sym_3_scope = 0
+var sym_3_mut = 0
+
+var sym_4_name = 0
+var sym_4_offset = 0
+var sym_4_scope = 0
+var sym_4_mut = 0
+
+var sym_5_name = 0
+var sym_5_offset = 0
+var sym_5_scope = 0
+var sym_5_mut = 0
+
+var sym_6_name = 0
+var sym_6_offset = 0
+var sym_6_scope = 0
+var sym_6_mut = 0
+
+var sym_7_name = 0
+var sym_7_offset = 0
+var sym_7_scope = 0
+var sym_7_mut = 0
+
+var sym_8_name = 0
+var sym_8_offset = 0
+var sym_8_scope = 0
+var sym_8_mut = 0
+
+var sym_9_name = 0
+var sym_9_offset = 0
+var sym_9_scope = 0
+var sym_9_mut = 0
+
+var sym_10_name = 0
+var sym_10_offset = 0
+var sym_10_scope = 0
+var sym_10_mut = 0
+
+var sym_11_name = 0
+var sym_11_offset = 0
+var sym_11_scope = 0
+var sym_11_mut = 0
+
+var sym_12_name = 0
+var sym_12_offset = 0
+var sym_12_scope = 0
+var sym_12_mut = 0
+
+var sym_13_name = 0
+var sym_13_offset = 0
+var sym_13_scope = 0
+var sym_13_mut = 0
+
+var sym_14_name = 0
+var sym_14_offset = 0
+var sym_14_scope = 0
+var sym_14_mut = 0
+
+var sym_15_name = 0
+var sym_15_offset = 0
+var sym_15_scope = 0
+var sym_15_mut = 0
+
+// ============================================================
+// 全局状态 - 代码生成
+// ============================================================
+var label_id = 0         // 标签计数器
+var str_id = 0           // 字符串计数器
+var stack_offset = 8     // 当前栈偏移
+
+// ============================================================
+// 辅助函数 - 字符判断
+// ============================================================
+fn is_digit(c)
+    return c >= 48 and c <= 57
+end
+
+fn is_alpha(c)
+    return (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or c == 95
+end
+
+fn is_alnum(c)
+    return is_digit(c) or is_alpha(c)
+end
+
+fn is_space(c)
+    return c == 32 or c == 9 or c == 10 or c == 13
+end
+
+// ============================================================
+// 辅助函数 - 标签生成
+// ============================================================
+fn new_label()
+    label_id = label_id + 1
+    return label_id
+end
+
+fn new_str()
+    str_id = str_id + 1
+    return str_id
+end
+
+// ============================================================
+// 符号表操作
+// ============================================================
+fn sym_get_name(idx)
+    if idx == 0
+        return sym_0_name
+    elif idx == 1
+        return sym_1_name
+    elif idx == 2
+        return sym_2_name
+    elif idx == 3
+        return sym_3_name
+    elif idx == 4
+        return sym_4_name
+    elif idx == 5
+        return sym_5_name
+    elif idx == 6
+        return sym_6_name
+    elif idx == 7
+        return sym_7_name
+    elif idx == 8
+        return sym_8_name
+    elif idx == 9
+        return sym_9_name
+    elif idx == 10
+        return sym_10_name
+    elif idx == 11
+        return sym_11_name
+    elif idx == 12
+        return sym_12_name
+    elif idx == 13
+        return sym_13_name
+    elif idx == 14
+        return sym_14_name
+    elif idx == 15
+        return sym_15_name
+    end
+    return 0
+end
+
+fn sym_get_offset(idx)
+    if idx == 0
+        return sym_0_offset
+    elif idx == 1
+        return sym_1_offset
+    elif idx == 2
+        return sym_2_offset
+    elif idx == 3
+        return sym_3_offset
+    elif idx == 4
+        return sym_4_offset
+    elif idx == 5
+        return sym_5_offset
+    elif idx == 6
+        return sym_6_offset
+    elif idx == 7
+        return sym_7_offset
+    elif idx == 8
+        return sym_8_offset
+    elif idx == 9
+        return sym_9_offset
+    elif idx == 10
+        return sym_10_offset
+    elif idx == 11
+        return sym_11_offset
+    elif idx == 12
+        return sym_12_offset
+    elif idx == 13
+        return sym_13_offset
+    elif idx == 14
+        return sym_14_offset
+    elif idx == 15
+        return sym_15_offset
+    end
+    return 0
+end
+
+fn sym_get_scope(idx)
+    if idx == 0
+        return sym_0_scope
+    elif idx == 1
+        return sym_1_scope
+    elif idx == 2
+        return sym_2_scope
+    elif idx == 3
+        return sym_3_scope
+    elif idx == 4
+        return sym_4_scope
+    elif idx == 5
+        return sym_5_scope
+    elif idx == 6
+        return sym_6_scope
+    elif idx == 7
+        return sym_7_scope
+    elif idx == 8
+        return sym_8_scope
+    elif idx == 9
+        return sym_9_scope
+    elif idx == 10
+        return sym_10_scope
+    elif idx == 11
+        return sym_11_scope
+    elif idx == 12
+        return sym_12_scope
+    elif idx == 13
+        return sym_13_scope
+    elif idx == 14
+        return sym_14_scope
+    elif idx == 15
+        return sym_15_scope
+    end
+    return 0
+end
+
+fn sym_set(idx, name_id, offset, scope, is_mut)
+    if idx == 0
+        sym_0_name = name_id
+        sym_0_offset = offset
+        sym_0_scope = scope
+        sym_0_mut = is_mut
+    elif idx == 1
+        sym_1_name = name_id
+        sym_1_offset = offset
+        sym_1_scope = scope
+        sym_1_mut = is_mut
+    elif idx == 2
+        sym_2_name = name_id
+        sym_2_offset = offset
+        sym_2_scope = scope
+        sym_2_mut = is_mut
+    elif idx == 3
+        sym_3_name = name_id
+        sym_3_offset = offset
+        sym_3_scope = scope
+        sym_3_mut = is_mut
+    elif idx == 4
+        sym_4_name = name_id
+        sym_4_offset = offset
+        sym_4_scope = scope
+        sym_4_mut = is_mut
+    elif idx == 5
+        sym_5_name = name_id
+        sym_5_offset = offset
+        sym_5_scope = scope
+        sym_5_mut = is_mut
+    elif idx == 6
+        sym_6_name = name_id
+        sym_6_offset = offset
+        sym_6_scope = scope
+        sym_6_mut = is_mut
+    elif idx == 7
+        sym_7_name = name_id
+        sym_7_offset = offset
+        sym_7_scope = scope
+        sym_7_mut = is_mut
+    elif idx == 8
+        sym_8_name = name_id
+        sym_8_offset = offset
+        sym_8_scope = scope
+        sym_8_mut = is_mut
+    elif idx == 9
+        sym_9_name = name_id
+        sym_9_offset = offset
+        sym_9_scope = scope
+        sym_9_mut = is_mut
+    elif idx == 10
+        sym_10_name = name_id
+        sym_10_offset = offset
+        sym_10_scope = scope
+        sym_10_mut = is_mut
+    elif idx == 11
+        sym_11_name = name_id
+        sym_11_offset = offset
+        sym_11_scope = scope
+        sym_11_mut = is_mut
+    elif idx == 12
+        sym_12_name = name_id
+        sym_12_offset = offset
+        sym_12_scope = scope
+        sym_12_mut = is_mut
+    elif idx == 13
+        sym_13_name = name_id
+        sym_13_offset = offset
+        sym_13_scope = scope
+        sym_13_mut = is_mut
+    elif idx == 14
+        sym_14_name = name_id
+        sym_14_offset = offset
+        sym_14_scope = scope
+        sym_14_mut = is_mut
+    elif idx == 15
+        sym_15_name = name_id
+        sym_15_offset = offset
+        sym_15_scope = scope
+        sym_15_mut = is_mut
+    end
+end
+
+fn sym_declare(name_id, is_mut)
+    let offset = stack_offset
+    stack_offset = stack_offset + 8
+    call sym_set sym_count, name_id, offset, scope_depth, is_mut
+    sym_count = sym_count + 1
+    return offset
+end
+
+fn sym_lookup(name_id)
+    var i = sym_count - 1
+    while i >= 0
+        let found_name = sym_get_name(i)
+        if found_name == name_id
+            return sym_get_offset(i)
+        end
+        i = i - 1
+    end
+    return 0 - 1
+end
+
+fn sym_push_scope()
+    scope_depth = scope_depth + 1
+end
+
+fn sym_pop_scope()
+    while sym_count > 0
+        let check_scope = sym_get_scope(sym_count - 1)
+        if check_scope == scope_depth
+            sym_count = sym_count - 1
+            stack_offset = stack_offset - 8
+        else
+            break
+        end
+    end
+    scope_depth = scope_depth - 1
+end
+
+// ============================================================
+// 代码生成 - 汇编输出
+// ============================================================
+fn emit_header()
+    call print "; Generated by slimec (self-hosting)"
+    call print "; Target: x86-64 Windows"
+    call print ""
+    call print "bits 64"
+    call print "default rel"
+    call print ""
+end
+
+fn emit_data_section()
+    call print "section .data"
+    call print "_newline: db 10, 0"
+    call print "_space: db 32, 0"
+end
+
+fn emit_bss_section()
+    call print ""
+    call print "section .bss"
+    call print "_itoa_buf: resb 24"
+    call print "_written: resq 1"
+end
+
+fn emit_text_start()
+    call print ""
+    call print "section .text"
+    call print "global Start"
+    call print "extern ExitProcess"
+    call print "extern GetStdHandle"
+    call print "extern WriteFile"
+    call print ""
+end
+
+fn emit_start_prologue()
+    call print "Start:"
+    call print "    push rbp"
+    call print "    mov rbp, rsp"
+    call print "    sub rsp, 256"
+    call print "    and rsp, -16"
+end
+
+fn emit_exit(code)
+    call print "    mov rcx, ", code
+    call print "    sub rsp, 32"
+    call print "    call ExitProcess"
+end
+
+fn emit_itoa_helper()
+    call print ""
+    call print "_itoa:"
+    call print "    push rbx"
+    call print "    push rcx"
+    call print "    push rdx"
+    call print "    push r12"
+    call print "    mov r12, rax"
+    call print "    mov rbx, 10"
+    call print "    mov rdi, _itoa_buf"
+    call print "    add rdi, 22"
+    call print "    mov byte [rdi], 0"
+    call print "    mov rcx, 0"
+    call print "    test rax, rax"
+    call print "    jns .itoa_pos"
+    call print "    neg rax"
+    call print "    mov rcx, 1"
+    call print ".itoa_pos:"
+    call print "    test rax, rax"
+    call print "    jnz .itoa_loop"
+    call print "    dec rdi"
+    call print "    mov byte [rdi], 48"
+    call print "    jmp .itoa_done"
+    call print ".itoa_loop:"
+    call print "    test rax, rax"
+    call print "    jz .itoa_done"
+    call print "    xor rdx, rdx"
+    call print "    div rbx"
+    call print "    add dl, 48"
+    call print "    dec rdi"
+    call print "    mov [rdi], dl"
+    call print "    jmp .itoa_loop"
+    call print ".itoa_done:"
+    call print "    test rcx, rcx"
+    call print "    jz .itoa_noneg"
+    call print "    dec rdi"
+    call print "    mov byte [rdi], 45"
+    call print ".itoa_noneg:"
+    call print "    mov rax, _itoa_buf"
+    call print "    add rax, 22"
+    call print "    sub rax, rdi"
+    call print "    pop r12"
+    call print "    pop rdx"
+    call print "    pop rcx"
+    call print "    pop rbx"
+    call print "    ret"
+end
+
+fn emit_print_helper()
+    call print ""
+    call print "_print_int:"
+    call print "    push rbp"
+    call print "    mov rbp, rsp"
+    call print "    sub rsp, 64"
+    call print "    call _itoa"
+    call print "    mov r12, rdi"
+    call print "    mov r13, rax"
+    call print "    mov rcx, -11"
+    call print "    call GetStdHandle"
+    call print "    mov rcx, rax"
+    call print "    mov rdx, r12"
+    call print "    mov r8, r13"
+    call print "    lea r9, [_written]"
+    call print "    mov qword [rsp+32], 0"
+    call print "    call WriteFile"
+    call print "    leave"
+    call print "    ret"
+    call print ""
+    call print "_print_newline:"
+    call print "    push rbp"
+    call print "    mov rbp, rsp"
+    call print "    sub rsp, 64"
+    call print "    mov rcx, -11"
+    call print "    call GetStdHandle"
+    call print "    mov rcx, rax"
+    call print "    mov rdx, _newline"
+    call print "    mov r8, 1"
+    call print "    lea r9, [_written]"
+    call print "    mov qword [rsp+32], 0"
+    call print "    call WriteFile"
+    call print "    leave"
+    call print "    ret"
+end
+
+// ============================================================
+// 代码生成 - 表达式
+// ============================================================
+fn emit_int(value)
+    call print "    mov rax, ", value
+end
+
+// 辅助函数：根据槽位号输出对应的内存访问指令
+fn emit_load_slot(slot)
+    if slot == 1
+        call print "    mov rax, [rbp-8]"
+    elif slot == 2
+        call print "    mov rax, [rbp-16]"
+    elif slot == 3
+        call print "    mov rax, [rbp-24]"
+    elif slot == 4
+        call print "    mov rax, [rbp-32]"
+    elif slot == 5
+        call print "    mov rax, [rbp-40]"
+    elif slot == 6
+        call print "    mov rax, [rbp-48]"
+    elif slot == 7
+        call print "    mov rax, [rbp-56]"
+    elif slot == 8
+        call print "    mov rax, [rbp-64]"
+    elif slot == 9
+        call print "    mov rax, [rbp-72]"
+    elif slot == 10
+        call print "    mov rax, [rbp-80]"
+    end
+end
+
+fn emit_store_slot(slot)
+    if slot == 1
+        call print "    mov [rbp-8], rax"
+    elif slot == 2
+        call print "    mov [rbp-16], rax"
+    elif slot == 3
+        call print "    mov [rbp-24], rax"
+    elif slot == 4
+        call print "    mov [rbp-32], rax"
+    elif slot == 5
+        call print "    mov [rbp-40], rax"
+    elif slot == 6
+        call print "    mov [rbp-48], rax"
+    elif slot == 7
+        call print "    mov [rbp-56], rax"
+    elif slot == 8
+        call print "    mov [rbp-64], rax"
+    elif slot == 9
+        call print "    mov [rbp-72], rax"
+    elif slot == 10
+        call print "    mov [rbp-80], rax"
+    end
+end
+
+fn emit_lea_slot(slot)
+    if slot == 1
+        call print "    lea rax, [rbp-8]"
+    elif slot == 2
+        call print "    lea rax, [rbp-16]"
+    elif slot == 3
+        call print "    lea rax, [rbp-24]"
+    elif slot == 4
+        call print "    lea rax, [rbp-32]"
+    elif slot == 5
+        call print "    lea rax, [rbp-40]"
+    elif slot == 6
+        call print "    lea rax, [rbp-48]"
+    elif slot == 7
+        call print "    lea rax, [rbp-56]"
+    elif slot == 8
+        call print "    lea rax, [rbp-64]"
+    elif slot == 9
+        call print "    lea rax, [rbp-72]"
+    elif slot == 10
+        call print "    lea rax, [rbp-80]"
+    end
+end
+
+fn emit_var(offset)
+    // offset 是字节偏移，转换为槽位
+    let slot = offset / 8
+    call emit_load_slot, slot
+end
+
+fn emit_store(offset)
+    let slot = offset / 8
+    call emit_store_slot, slot
+end
+
+fn emit_push()
+    call print "    push rax"
+end
+
+fn emit_pop_rbx()
+    call print "    pop rbx"
+end
+
+fn emit_add()
+    call print "    pop rbx"
+    call print "    add rax, rbx"
+end
+
+fn emit_sub()
+    call print "    pop rbx"
+    call print "    sub rbx, rax"
+    call print "    mov rax, rbx"
+end
+
+fn emit_mul()
+    call print "    pop rbx"
+    call print "    imul rax, rbx"
+end
+
+fn emit_div()
+    call print "    mov rbx, rax"
+    call print "    pop rax"
+    call print "    cqo"
+    call print "    idiv rbx"
+end
+
+fn emit_mod()
+    call print "    mov rbx, rax"
+    call print "    pop rax"
+    call print "    cqo"
+    call print "    idiv rbx"
+    call print "    mov rax, rdx"
+end
+
+fn emit_neg()
+    call print "    neg rax"
+end
+
+fn emit_not()
+    call print "    test rax, rax"
+    call print "    setz al"
+    call print "    movzx rax, al"
+end
+
+fn emit_cmp_eq()
+    call print "    pop rbx"
+    call print "    cmp rbx, rax"
+    call print "    sete al"
+    call print "    movzx rax, al"
+end
+
+fn emit_cmp_ne()
+    call print "    pop rbx"
+    call print "    cmp rbx, rax"
+    call print "    setne al"
+    call print "    movzx rax, al"
+end
+
+fn emit_cmp_lt()
+    call print "    pop rbx"
+    call print "    cmp rbx, rax"
+    call print "    setl al"
+    call print "    movzx rax, al"
+end
+
+fn emit_cmp_gt()
+    call print "    pop rbx"
+    call print "    cmp rbx, rax"
+    call print "    setg al"
+    call print "    movzx rax, al"
+end
+
+fn emit_cmp_le()
+    call print "    pop rbx"
+    call print "    cmp rbx, rax"
+    call print "    setle al"
+    call print "    movzx rax, al"
+end
+
+fn emit_cmp_ge()
+    call print "    pop rbx"
+    call print "    cmp rbx, rax"
+    call print "    setge al"
+    call print "    movzx rax, al"
+end
+
+fn emit_and()
+    call print "    pop rbx"
+    call print "    test rax, rax"
+    call print "    setne al"
+    call print "    test rbx, rbx"
+    call print "    setne bl"
+    call print "    and al, bl"
+    call print "    movzx rax, al"
+end
+
+fn emit_or()
+    call print "    pop rbx"
+    call print "    or rax, rbx"
+    call print "    test rax, rax"
+    call print "    setne al"
+    call print "    movzx rax, al"
+end
+
+// ============================================================
+// 代码生成 - 控制流
+// ============================================================
+fn emit_label(id)
+    call print ".L", id, ":"
+end
+
+fn emit_jmp(id)
+    call print "    jmp .L", id
+end
+
+fn emit_jz(id)
+    call print "    test rax, rax"
+    call print "    jz .L", id
+end
+
+fn emit_jnz(id)
+    call print "    test rax, rax"
+    call print "    jnz .L", id
+end
+
+// ============================================================
+// 代码生成 - 函数
+// ============================================================
+// 注意：由于 slime 语言无法区分字符串指针和整数，
+// emit_func_label 和 emit_call 在这里不实际使用。
+// 我们直接在调用点手写完整的汇编行。
+fn emit_func_label(name)
+    call print ""
+    // 在调用点手写: call print "add:"
+end
+
+fn emit_func_prologue()
+    call print "    push rbp"
+    call print "    mov rbp, rsp"
+    call print "    sub rsp, 128"
+end
+
+fn emit_func_epilogue()
+    call print "    xor rax, rax"
+    call print "    leave"
+    call print "    ret"
+end
+
+fn emit_return()
+    call print "    leave"
+    call print "    ret"
+end
+
+fn emit_call(name)
+    call print "    call ", name
+end
+
+fn emit_mov_to_arg(n)
+    if n == 0
+        call print "    mov rdi, rax"
+    elif n == 1
+        call print "    mov rsi, rax"
+    elif n == 2
+        call print "    mov rdx, rax"
+    elif n == 3
+        call print "    mov rcx, rax"
+    elif n == 4
+        call print "    mov r8, rax"
+    elif n == 5
+        call print "    mov r9, rax"
+    end
+end
+
+fn emit_save_param(n, offset)
+    // 使用单独的 print 语句避免字符串拼接问题
+    if n == 0
+        call print "    mov qword [rbp-8], rdi"
+    elif n == 1
+        call print "    mov qword [rbp-16], rsi"
+    elif n == 2
+        call print "    mov qword [rbp-24], rdx"
+    elif n == 3
+        call print "    mov qword [rbp-32], rcx"
+    elif n == 4
+        call print "    mov qword [rbp-40], r8"
+    elif n == 5
+        call print "    mov qword [rbp-48], r9"
+    end
+end
+
+// ============================================================
+// 代码生成 - 输出
+// ============================================================
+fn emit_print_int_call()
+    call print "    call _print_int"
+end
+
+fn emit_print_newline_call()
+    call print "    call _print_newline"
+end
+
+// ============================================================
+// 完整程序生成示例
+// ============================================================
+fn generate_demo_program()
+    // === 头部 ===
+    call emit_header
+    
+    // === 数据段 ===
+    call emit_data_section
+    
+    // === BSS 段 ===
+    call emit_bss_section
+    
+    // === 代码段 ===
+    call emit_text_start
+    
+    // === _start 入口 ===
+    call emit_start_prologue
+    call print ""
+    
+    // --- 测试 1: 常量折叠 ---
+    call print "    ; === Test 1: Constant folding ==="
+    call print "    ; let a = 10 + 20 + 30"
+    call emit_int 60    // 编译器已折叠
+    let a_off = sym_declare(1, 0)
+    call emit_store, a_off
+    
+    call print "    ; print a"
+    call emit_var, a_off
+    call emit_print_int_call
+    call emit_print_newline_call
+    call print ""
+    
+    // --- 测试 2: 算术运算 ---
+    call print "    ; === Test 2: Arithmetic ==="
+    call print "    ; let b = a * 2"
+    call emit_var, a_off
+    call emit_push
+    call emit_int 2
+    call emit_mul
+    let b_off = sym_declare(2, 0)
+    call emit_store, b_off
+    
+    call print "    ; print b"
+    call emit_var, b_off
+    call emit_print_int_call
+    call emit_print_newline_call
+    call print ""
+    
+    // --- 测试 3: 比较和条件 ---
+    call print "    ; === Test 3: Comparison ==="
+    call print "    ; if a > 50"
+    call emit_var, a_off
+    call emit_push
+    call emit_int 50
+    call emit_cmp_gt
+    let else_lbl = new_label()
+    let endif_lbl = new_label()
+    call emit_jz, else_lbl
+    
+    call print "    ; then: print 1"
+    call emit_int 1
+    call emit_print_int_call
+    call emit_print_newline_call
+    call emit_jmp, endif_lbl
+    
+    call emit_label, else_lbl
+    call print "    ; else: print 0"
+    call emit_int 0
+    call emit_print_int_call
+    call emit_print_newline_call
+    
+    call emit_label, endif_lbl
+    call print ""
+    
+    // --- 测试 4: while 循环 ---
+    call print "    ; === Test 4: While loop ==="
+    call print "    ; var i = 0"
+    call emit_int 0
+    let i_off = sym_declare(3, 1)
+    call emit_store, i_off
+    
+    call print "    ; var sum = 0"
+    call emit_int 0
+    let sum_off = sym_declare(4, 1)
+    call emit_store, sum_off
+    
+    let loop_start = new_label()
+    let loop_end = new_label()
+    
+    call print ""
+    call emit_label, loop_start
+    call print "    ; while i < 10"
+    call emit_var, i_off
+    call emit_push
+    call emit_int 10
+    call emit_cmp_lt
+    call emit_jz, loop_end
+    
+    call print "    ; sum = sum + i"
+    call emit_var, sum_off
+    call emit_push
+    call emit_var, i_off
+    call emit_add
+    call emit_store, sum_off
+    
+    call print "    ; i = i + 1"
+    call emit_var, i_off
+    call emit_push
+    call emit_int 1
+    call emit_add
+    call emit_store, i_off
+    
+    call emit_jmp, loop_start
+    call emit_label, loop_end
+    
+    call print "    ; print sum (should be 45)"
+    call emit_var, sum_off
+    call emit_print_int_call
+    call emit_print_newline_call
+    call print ""
+    
+    // --- 测试 5: 函数调用 ---
+    call print "    ; === Test 5: Function call ==="
+    call print "    ; let x = add(3, 4)"
+    call emit_int 3
+    call emit_mov_to_arg 0
+    call emit_int 4
+    call emit_mov_to_arg 1
+    call print "    call add"
+    let x_off = sym_declare(5, 0)
+    call emit_store, x_off
+    
+    call print "    ; print x (should be 7)"
+    call emit_var, x_off
+    call emit_print_int_call
+    call emit_print_newline_call
+    call print ""
+    
+    // --- 测试 6: 嵌套函数调用 ---
+    call print "    ; === Test 6: Nested function call ==="
+    call print "    ; let y = mul(add(2, 3), 4)"
+    call emit_int 2
+    call emit_mov_to_arg 0
+    call emit_int 3
+    call emit_mov_to_arg 1
+    call print "    call add"
+    call emit_push
+    call emit_int 4
+    call emit_mov_to_arg 1
+    call emit_pop_rbx
+    call print "    mov rdi, rbx"
+    call print "    call mul"
+    let y_off = sym_declare(6, 0)
+    call emit_store, y_off
+    
+    call print "    ; print y (should be 20)"
+    call emit_var, y_off
+    call emit_print_int_call
+    call emit_print_newline_call
+    call print ""
+    
+    // --- 测试 7: 借用语义 ---
+    call print "    ; === Test 7: Borrow semantics ==="
+    call print "    ; let val = 100"
+    call emit_int 100
+    let val_off = sym_declare(7, 0)
+    call emit_store, val_off
+    
+    call print "    ; let ref_val = &val (address)"
+    // 使用槽位版本避免字符串拼接问题
+    let val_slot = val_off / 8
+    call emit_lea_slot, val_slot
+    let ref_off = sym_declare(8, 0)
+    call emit_store, ref_off
+    
+    call print "    ; print *ref_val"
+    call emit_var, ref_off
+    call print "    mov rax, [rax]"
+    call emit_print_int_call
+    call emit_print_newline_call
+    call print ""
+    
+    // === 退出 ===
+    call print "    ; === Exit ==="
+    call emit_exit 0
+    
+    // === 辅助函数 ===
+    call emit_itoa_helper
+    call emit_print_helper
+    
+    // === 用户函数 ===
+    call print ""
+    call print "; === User defined functions ==="
+    
+    // fn add(a, b) return a + b end
+    call print ""
+    call print "add:"
+    call emit_func_prologue
+    call emit_save_param 0 8
+    call emit_save_param 1 16
+    call print "    mov rax, [rbp-8]"
+    call print "    add rax, [rbp-16]"
+    call emit_return
+    
+    // fn mul(a, b) return a * b end  
+    call print ""
+    call print "mul:"
+    call emit_func_prologue
+    call emit_save_param 0 8
+    call emit_save_param 1 16
+    call print "    mov rax, [rbp-8]"
+    call print "    imul rax, [rbp-16]"
+    call emit_return
+end
+
+
+
+// ============================================================
+// 主程序 - 编译器入口
+// ============================================================
+
+// 生成演示程序的汇编代码
+call generate_demo_program

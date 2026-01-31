@@ -1,0 +1,21 @@
+[package]
+name = "slimec"
+version = "0.2.0"
+edition = "2021"
+authors = ["Slime Lang Team"]
+description = "slime-lang to x86-64 NASM compiler"
+repository = "https://github.com/slime-lang/slime"
+license = "MIT"
+keywords = ["compiler", "programming-language", "slime"]
+categories = ["compilers", "development-tools"]
+
+[dependencies]
+
+[[bin]]
+name = "slimec"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

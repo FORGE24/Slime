@@ -1,0 +1,4 @@
+// 所有权错误测试 - 这个应该编译失败
+
+// 未定义变量
+call host.stdout undefined_var

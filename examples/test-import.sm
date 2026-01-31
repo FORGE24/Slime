@@ -1,0 +1,67 @@
+// ============================================
+// test-import.sm - 模块导入测试
+// 演示 Slime 模块系统的各种导入方式
+// ============================================
+
+// ==================== 方式1: import 整个模块 ====================
+// import "path/module.sm"
+// import "module.sm" as alias
+import "mathlib.sm"
+
+// ==================== 方式2: use 语法（Rust风格）====================
+// use module::func
+// use module::{a, b, c}
+// use module::*
+
+// ==================== 方式3: from ... import（Python风格）====================
+// from "module" import func
+// from "module" import func as alias
+
+fn main {
+    print "===== Slime 模块系统测试 ====="
+    print ""
+    
+    // ========== 测试数学库函数 ==========
+    print "--- 数学运算 ---"
+    
+    let a = 10
+    let b = 3
+    
+    print "a =", a
+    print "b =", b
+    print ""
+    
+    // 调用导入的函数
+    let sum = add(a, b)
+    print "add(a, b) =", sum
+    
+    let diff = sub(a, b)
+    print "sub(a, b) =", diff
+    
+    let prod = mul(a, b)
+    print "mul(a, b) =", prod
+    
+    let quot = div(a, b)
+    print "div(a, b) =", quot
+    
+    print ""
+    print "--- 高级运算 ---"
+    
+    let fact5 = factorial(5)
+    print "factorial(5) =", fact5
+    
+    let pow23 = power(2, 3)
+    print "power(2, 3) =", pow23
+    
+    let abs_neg = abs(0 - 42)
+    print "abs(-42) =", abs_neg
+    
+    let max_val = max(7, 12)
+    print "max(7, 12) =", max_val
+    
+    let min_val = min(7, 12)
+    print "min(7, 12) =", min_val
+    
+    print ""
+    print "===== 测试完成 ====="
+}

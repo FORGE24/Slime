@@ -1,0 +1,161 @@
+cny Out "host.graphics"
+def static.interface "Sreyt.Graphics.SetColor" any Out "host.graphics"
+def static.interface "Sreyt.Graphics.SetFont" any Out "host.graphics"
+
+// 事件系统接口
+def static.interface "Sreyt.Event.OnClick" any In "host.events"
+def static.interface "Sreyt.Event.OnKeyPress" any In "host.events"
+def static.interface "Sreyt.Event.OnResize" any In "host.events"
+def static.interface "Sreyt.Event.OnClose" any In "host.events"
+
+// ============================================================
+// 基础数据结构
+// ============================================================
+
+// 颜色
+let COLOR_WHITE = 16777215      // 0xFFFFFF
+let COLOR_BLACK = 0             // 0x000000  
+let COLOR_RED = 16711680        // 0xFF0000
+let COLOR_GREEN = 65280         // 0x00FF00
+let COLOR_BLUE = 255            // 0x0000FF
+let COLOR_GRAY = 8421504        // 0x808080
+
+// 尺寸和位置
+fn create_rect(x, y, width, height)
+    let rect_x = x
+    let rect_y = y  
+    let rect_width = width
+    let rect_height = height
+    return rect_x  // 简化：返回x坐标作为句柄
+end
+
+fn create_point(x, y)
+    let point_x = x
+    let point_y = y
+    return point_x // 简化：返回x坐标作为句柄
+end
+
+// ============================================================
+// 窗口管理器
+// ============================================================
+
+var window_count = 0
+var main_window_id = 0
+
+fn window_create(title, width, height)
+    window_count = window_count + 1
+    let window_id = window_count
+    
+    // 通过接口创建系统窗口
+    call Sreyt.Window.Create, window_id
+    call Sreyt.Window.SetTitle, title  
+    call Sreyt.Window.SetSize, width, height
+    
+    if main_window_id == 0
+        main_window_id = window_id
+    end
+    
+    call print "Sreyt: Created window '", title, "' (", width, "x", height, ")"
+    return window_id
+end
+
+fn window_show(window_id)
+    call Sreyt.Window.Show, window_id
+    call print "Sreyt: Showing window ", window_id
+end
+
+fn window_hide(window_id)
+    call Sreyt.Window.Hide, window_id
+    call print "Sreyt: Hiding window ", window_id
+end
+
+fn window_close(window_id)
+    call Sreyt.Window.Close, window_id
+    call print "Sreyt: Closing window ", window_id
+end
+
+fn window_set_position(window_id, x, y)
+    call Sreyt.Window.SetPosition, window_id, x, y
+    call print "Sreyt: Moving window ", window_id, " to (", x, ",", y, ")"
+end
+
+// ============================================================
+// 事件系统 - 响应式编程的核心
+// ============================================================
+
+var event_handlers_count = 0
+
+// 事件处理器注册
+fn on_click(widget_id, handler_func)
+    event_handlers_count = event_handlers_count + 1
+    call Sreyt.Event.OnClick, widget_id, handler_func
+    call print "Sreyt: Registered click handler for widget ", widget_id
+end
+
+fn on_key_press(widget_id, handler_func) 
+    event_handlers_count = event_handlers_count + 1
+    call Sreyt.Event.OnKeyPress, widget_id, handler_func
+    call print "Sreyt: Registered key handler for widget ", widget_id
+end
+
+fn on_window_close(window_id, handler_func)
+    event_handlers_count = event_handlers_count + 1
+    call Sreyt.Event.OnClose, window_id, handler_func
+    call print "Sreyt: Registered close handler for window ", window_id
+end
+
+// ============================================================
+// 应用程序生命周期
+// ============================================================
+
+var app_running = 0
+
+fn app_init()
+    app_running = 1
+    call print "Sreyt: GUI Application initialized"
+    call print "Sreyt: Event system ready"
+end
+
+fn app_run()
+    if app_running == 0
+        call print "Sreyt: Error - App not initialized! Call app_init() first."
+        return 0 - 1
+    end
+    
+    call print "Sreyt: Starting main event loop..."
+    
+    // 简化的事件循环 - 实际实现会是无限循环
+    var loop_count = 0
+    while loop_count < 10
+        call print "Sreyt: Event loop iteration ", loop_count
+        
+        // 模拟事件处理
+        if loop_count == 5
+            call print "Sreyt: Simulated user interaction"
+        end
+        
+        loop_count = loop_count + 1
+    end
+    
+    call print "Sreyt: Event loop finished"
+    return 0
+end
+
+fn app_quit()
+    app_running = 0
+    call print "Sreyt: Application shutting down..."
+    
+    // 清理所有窗口
+    if main_window_id > 0
+        call window_close main_window_id
+    end
+    
+    call print "Sreyt: Cleanup complete"
+end
+
+// ============================================================
+// 核心初始化
+// ============================================================
+
+call print "Sreyt GUI Library v1.0 - Core module loaded"
+call print "Ready for widget creation and application

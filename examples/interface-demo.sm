@@ -1,0 +1,37 @@
+// slime - 万物皆接口示例
+
+// 定义输出接口
+def static.interface "print" str Out "host.stdout"
+
+// 使用自定义接口
+call print "Hello via print interface"
+
+// 直接使用内置接口  
+call host.stdout "Hello via host.stdout"
+
+// 变量演示
+let x = 10
+let y = 20
+let sum = x + y
+
+// 输出数字（每行一个 call）
+call print x
+call print y  
+call print sum
+
+// 条件语句
+if sum > 25
+    call print "sum > 25"
+else
+    call print "sum <= 25"
+end
+
+// 循环
+var counter = 0
+while counter < 3
+    call print counter
+    counter = counter + 1
+end
+
+// 释放接口
+drop print

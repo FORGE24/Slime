@@ -1,0 +1,57 @@
+ctrue"
+end
+
+// 5. 循环
+call print "5. 循环测试"
+var i = 0
+var sum = 0
+while i < 5
+    sum = sum + i
+    i = i + 1
+end
+call print sum
+
+// 6. 借用
+call print "6. 借用测试"
+let val = 42
+let ref_val = &val
+call print val
+call print *ref_val
+
+// 7. 可变变量
+call print "7. 可变变量"
+var counter = 0
+counter = counter + 10
+counter = counter + 20
+call print counter
+
+// 8. 函数
+call print "8. 函数测试"
+fn add(a, b)
+    return a + b
+end
+
+fn square(n)
+    return n * n
+end
+
+let result = add(3, 4)
+call print result
+
+let sq = square(5)
+call print sq
+
+// 9. 嵌套条件
+call print "9. 嵌套条件"
+let score = 85
+if score >= 90
+    call print "A"
+elif score >= 80
+    call print "B"
+elif score >= 70
+    call print "C"
+else
+    call print "F"
+end
+
+call print "===== 测试完成 ====="

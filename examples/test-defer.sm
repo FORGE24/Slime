@@ -1,0 +1,7 @@
+// test-defer.sm: test defer
+fn main {
+    defer {
+        call Example.Print "deferred"
+    }
+    call Example.Print "before defer"
+}

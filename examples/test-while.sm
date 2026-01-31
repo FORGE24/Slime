@@ -1,0 +1,7 @@
+// test-while.sm: test while loop
+fn main {
+    while 1 {
+        call Example.Print "once"
+        break
+    }
+}
