@@ -2,6 +2,8 @@
 *.exe
 *.asm
 *.obj
+*.pdb
+*.class
 
 # IDE and Hidden Files
 .github/
