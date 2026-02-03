@@ -5,8 +5,8 @@
     <br/>
     <em>A fast, lightweight programming language</em>
     <br/><br/>
-    <a href="https://opensource.org/license/agpl-v3">
-        <img src="https://img.shields.io/badge/License-AGPL_v3-yellow.svg" alt="License: AGPL v3"/>
+    <a href="https://opensource.org/license/gpl-2-0">
+        <img src="https://img.shields.io/badge/License-GPL_v2-yellow.svg" alt="License: GPL v2"/>
     </a>
     <a href="https://rust-lang.org/">
         <img src="https://img.shields.io/badge/rust-1.8+-blue.svg" alt="Rust"/>
