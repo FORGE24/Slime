@@ -5,6 +5,9 @@
 *.pdb
 *.class
 
+# Rust stuff
+target/
+
 # IDE and Hidden Files
 .github/
 .idea/
