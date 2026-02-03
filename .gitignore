@@ -2,3 +2,8 @@
 *.exe
 *.asm
 *.obj
+
+# IDE and Hidden Files
+.github/
+.idea/
+.vscode/
