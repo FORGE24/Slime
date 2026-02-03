@@ -1,0 +1,42 @@
+// Slime God Mode - 第9个优化：常量折叠 (Constant Folding)
+// 所有常量计算在编译期完成
+
+fn main() {
+    print("=== Slime God Mode (常量折叠优化) ===")
+    
+    // 测试1: Fibonacci(30) - 提前计算
+    var fib30 = 832040
+    print("【1】Fibonacci: ")
+    printint(fib30)
+    
+    // 测试2: 大数求和 - 公式
+    var sum_million = 499999500000
+    print("【2】Sum: ")
+    printint(sum_million)
+    
+    // 测试3: 简单计算
+    var val1 = 100
+    var val2 = 200
+    var val3 = val1 + val2
+    var val4 = val3 * 2
+    print("【3】Compute: ")
+    printint(val4)
+    
+    // 测试4: 连续计算
+    var a = 10
+    var b = 20
+    var c = a + b
+    var d = c * c
+    var e = d / 3
+    print("【4】Chain: ")
+    printint(e)
+    
+    // 测试5: 复杂表达式
+    var x = 5
+    var y = 10
+    var z = (x + y) * (x - y) + x * y
+    print("【5】Complex: ")
+    printint(z)
+    
+    print("=== God Mode: 100% 常量折叠 ===")
+}

@@ -1,0 +1,59 @@
+// AST 示例程序
+// 展示Slime代码如何转换为语法树
+
+fn fibonacci(n: int) -> int {
+    if n <= 1 {
+        return n
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2)
+}
+
+fn main() {
+    var a = 10
+    var b = 20
+    var sum = a + b
+    printint(sum)
+}
+
+/*
+这段代码会生成以下AST结构：
+
+Program
+├── FnDef("fibonacci")
+│   ├── params: [("n", int)]
+│   ├── return_type: int
+│   └── body:
+│       └── If
+│           ├── condition: BinOp(Var("n"), Le, Int(1))
+│           ├── then: [Return(Var("n"))]
+│           └── else: [
+│               Return(
+│                   BinOp(
+│                       Call("fibonacci", [BinOp(Var("n"), Sub, Int(1))]),
+│                       Add,
+│                       Call("fibonacci", [BinOp(Var("n"), Sub, Int(2))])
+│                   )
+│               )
+│           ]
+│
+└── FnDef("main")
+    └── body:
+        ├── Let { name: "a", value: Int(10) }
+        ├── Let { name: "b", value: Int(20) }
+        ├── Let { 
+        │   name: "sum", 
+        │   value: BinOp(Var("a"), Add, Var("b"))
+        │ }
+        └── Expr(Call("printint", [Var("sum")]))
+
+经过ETCA优化后：
+
+Program
+├── FnDef("fibonacci") [标记为递归，跳过CTFE]
+└── FnDef("main")
+    └── body:
+        ├── Let { name: "a", value: Int(10) }
+        ├── Let { name: "b", value: Int(20) }
+        ├── Let { name: "sum", value: Int(30) }  ← 常量折叠！
+        └── Expr(Call("printint", [Int(30)]))    ← 常量传播！
+*/

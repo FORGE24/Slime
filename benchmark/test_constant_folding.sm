@@ -1,0 +1,8 @@
+fn main() {
+    var a = 100
+    var b = 200
+    var c = a + b
+    var d = c * 2
+    var e = d - a
+    printint(e)
+}

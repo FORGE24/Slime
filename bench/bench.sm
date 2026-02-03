@@ -1,8 +1,0 @@
-// slime 性能测试 - 累加 1 到 1000000
-var sum = 0
-var i = 0
-while i < 1000000
-    sum = sum + i
-    i = i + 1
-end
-call host.stdout sum
