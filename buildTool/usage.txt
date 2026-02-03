@@ -1,0 +1,5 @@
+Usage: buildTool [-i] FILE OUTPUT_DIRECTORY
+
+build FILE as an Slime project
+
+        -i      Ignore Warnings of Environments
