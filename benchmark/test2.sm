@@ -1,9 +1,0 @@
-fn simple() -> int {
-    return 42
-}
-
-fn main {
-    print "Test"
-    var result = simple()
-    print "Result:", result
-}
