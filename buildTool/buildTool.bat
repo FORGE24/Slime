@@ -16,6 +16,7 @@ set FINISHED=Compile Finished. Check %OUT_DIR% for binaries.
     if not defined nasm (call warn not_def nasm && set nasm=nasm)
     if not defined slimec (call warn not_def slimec && set slimec=slimec)
     if not defined link (call warn not_def link && set link=golink)
+    if not defined link_files (call warn not_def link_files && set link_files=kernel32.dll)
 
 :MAIN
     :: Check if FILE exists, BUILD if yes. Main Function Entry. Needs FILE be set
@@ -34,7 +35,7 @@ set FINISHED=Compile Finished. Check %OUT_DIR% for binaries.
     ) else (
         %slimec% %FILE% -o %OUT_DIR%\project.asm
         %nasm% -fwin64 %OUT_DIR%\project.asm -o %OUT_DIR%\project.obj
-        %link% /console /entry main kernel32.dll %OUT_DIR%\project.obj
+        %link% /console /entry main %link_files% %OUT_DIR%\project.obj
     )
     echo %FINISHED%
     goto EOF

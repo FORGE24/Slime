@@ -2,4 +2,15 @@ Usage: buildTool [-i] FILE OUTPUT_DIRECTORY
 
 build FILE as an Slime project
 
-        -i      Ignore Warnings of Environments
+        -i      Ignore Warnings
+
+Environment variable settings
+        Var Name    Description             Example
+        nasm        NASM executable path    ...\nasm.exe
+        slimec      SLIMEC executable path  ...\slimec.exe
+        link        LINK executable path    ...\(go)link.exe
+        link_files  FILES to link           kernel32.dll xxx.dll xxx.dll xxx.dll (default: kernel32.dll)
+
+Environment variable DEBUG
+        Var Name    Description             Example
+        dry_run     RUN NO build command    true|...|unset
