@@ -1,0 +1,14 @@
+// slime standard library — dict
+// Dict handles are opaque runtime values from builtins (no `dict` type yet).
+// Use builtins directly:
+//   var d = dict_new();
+//   dict_put(d, "key", 1.0);
+//   print_f6(dict_sum(d));
+//   dict_del_prefix1(d);
+namespace std.dict;
+
+fn sum_hint() -> float {
+    return 0.0;
+}
+
+end namespace;

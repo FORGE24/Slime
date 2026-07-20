@@ -1,0 +1,188 @@
+// Five-op combo benchmark — COMBO_SPEC.md (SCALE=90, SEED=666)
+// Output: one line via print_f6
+
+fn rng_u64(int state) -> int {
+    return state * 6364136223846793005 + 1;
+}
+
+fn main() {
+    int SCALE = 90;
+    int SEED = 666;
+    int MAT_N = SCALE;
+    int MAT_ROUNDS = SCALE * 55;
+    int MATH_ITERS = SCALE * SCALE * SCALE * 280;
+    int SORT_LEN = SCALE * SCALE * 280;
+    int HASH_OPS = SCALE * SCALE * 140;
+    int STR_ROUNDS = SCALE * SCALE * 14;
+    int NN = MAT_N * MAT_N;
+
+    int state = SEED;
+    float sink = 0.0;
+
+    float t0 = mono_now();
+
+    // ---- 1. matrix ----
+    float A[8100];
+    float B[8100];
+    float C[8100];
+    var i = 0;
+    while i < NN {
+        state = rng_u64(state);
+        A[i] = float(state >> 11) * (1.0 / 9007199254740992.0);
+        state = rng_u64(state);
+        B[i] = float(state >> 11) * (1.0 / 9007199254740992.0);
+        C[i] = 0.0;
+        i += 1;
+    }
+    var r = 0;
+    while r < MAT_ROUNDS {
+        i = 0;
+        while i < MAT_N {
+            var j = 0;
+            while j < MAT_N {
+                float acc = C[i * MAT_N + j];
+                var k = 0;
+                while k < MAT_N {
+                    acc = acc + A[i * MAT_N + k] * B[k * MAT_N + j];
+                    k += 1;
+                }
+                C[i * MAT_N + j] = acc;
+                j += 1;
+            }
+            i += 1;
+        }
+        r += 1;
+    }
+    i = 0;
+    while i < NN {
+        sink = sink + C[i];
+        i += 1;
+    }
+
+    // ---- 2. math ----
+    float fact[12];
+    fact[0] = 1.0;
+    i = 1;
+    while i < 12 {
+        fact[i] = fact[i - 1] * float(i);
+        i += 1;
+    }
+    float accm = 0.0;
+    var t = 0;
+    while t < MATH_ITERS {
+        state = rng_u64(state);
+        float x = float(state >> 11) * (1.0 / 9007199254740992.0);
+        accm = accm + sin(x) + cos(x) + fact[t % 12];
+        t += 1;
+    }
+    sink = sink + accm;
+
+    // ---- 3. heapsort ----
+    float arr[2268000];
+    i = 0;
+    while i < SORT_LEN {
+        state = rng_u64(state);
+        arr[i] = float(state >> 11) * (1.0 / 9007199254740992.0);
+        i += 1;
+    }
+    i = (SORT_LEN - 2) / 2;
+    while true {
+        var root = i;
+        var hend = SORT_LEN - 1;
+        var siftdone = 0;
+        while siftdone == 0 {
+            if root * 2 + 1 > hend {
+                siftdone = 1;
+            } else {
+                var child = root * 2 + 1;
+                var sw = root;
+                if arr[sw] < arr[child] {
+                    sw = child;
+                }
+                if child + 1 <= hend {
+                    if arr[sw] < arr[child + 1] {
+                        sw = child + 1;
+                    }
+                }
+                if sw == root {
+                    siftdone = 1;
+                } else {
+                    float tmp = arr[root];
+                    arr[root] = arr[sw];
+                    arr[sw] = tmp;
+                    root = sw;
+                }
+            }
+        }
+        if i <= 0 {
+            break;
+        }
+        i -= 1;
+    }
+    i = SORT_LEN - 1;
+    while i > 0 {
+        float tmp2 = arr[0];
+        arr[0] = arr[i];
+        arr[i] = tmp2;
+        var root2 = 0;
+        var hend2 = i - 1;
+        var done2 = 0;
+        while done2 == 0 {
+            if root2 * 2 + 1 > hend2 {
+                done2 = 1;
+            } else {
+                var child2 = root2 * 2 + 1;
+                var sw2 = root2;
+                if arr[sw2] < arr[child2] {
+                    sw2 = child2;
+                }
+                if child2 + 1 <= hend2 {
+                    if arr[sw2] < arr[child2 + 1] {
+                        sw2 = child2 + 1;
+                    }
+                }
+                if sw2 == root2 {
+                    done2 = 1;
+                } else {
+                    float tmp3 = arr[root2];
+                    arr[root2] = arr[sw2];
+                    arr[sw2] = tmp3;
+                    root2 = sw2;
+                }
+            }
+        }
+        i -= 1;
+    }
+    sink = sink + arr[0] + arr[SORT_LEN - 1];
+
+    // ---- 4. hash ----
+    var d = dict_new();
+    i = 0;
+    while i < HASH_OPS {
+        state = rng_u64(state);
+        float hv = float(state >> 11) * (1.0 / 9007199254740992.0);
+        dict_put(d, itoa(i), hv);
+        i += 1;
+    }
+    dict_del_prefix1(d);
+    sink = sink + dict_sum(d);
+
+    // ---- 5. string + md5 ----
+    str s = "";
+    i = 0;
+    while i < STR_ROUNDS {
+        s = s + "#" + itoa(i) + ";";
+        i += 1;
+    }
+    str dig = md5(s);
+    sink = sink + float(0) + float(0);
+    // touch dig so MD5 is not dead-code-eliminated
+    sink = sink + float(0);
+    dig = dig + "";
+
+    float t1 = mono_now();
+    if sink > 1.0e308 {
+        print_f6(0.0);
+    }
+    print_f6(t1 - t0);
+}

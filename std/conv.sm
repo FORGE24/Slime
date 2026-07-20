@@ -1,0 +1,20 @@
+// slime standard library — conversions
+namespace std.conv;
+
+fn int_to_str(int n) -> str {
+    return itoa(n);
+}
+
+fn str_to_int(str s) -> int {
+    return atoi(s);
+}
+
+fn str_to_float(str s) -> float {
+    return atof(s);
+}
+
+fn int_to_float(int n) -> float {
+    return float(n);
+}
+
+end namespace;

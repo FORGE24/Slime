@@ -1,0 +1,46 @@
+// Advanced ownership: Rust-style own/move/borrow + 按份共有/共同共有 + exclusive/whole
+
+fn take_own(own int x) -> int {
+    return x;
+}
+
+fn peek(&int r) -> int {
+    return r;
+}
+
+fn bump(&mut int r) {
+    r = r + 1;
+}
+
+fn main() {
+    // --- exclusive unique ownership (Rust-like) ---
+    exclusive own int a = 10;
+    print peek(a);
+    bump(a);
+    print a;
+    own int b = move a;
+    print take_own(move b);
+
+    // --- 按份共有 share[n/d] ---
+    share[1/2] int left = share_new(100, 1, 2);
+    share[1/2] int right = share_peer(left);
+    print left;
+    print right;
+    // each co-owner may drop their own share independently
+    drop(left);
+    print right;
+
+    // --- 共同共有 joint + whole (unanimous consent) ---
+    whole joint int j1 = joint_new(7);
+    whole joint int j2 = joint_peer(j1);
+    print j1;
+    consent(j1);
+    consent(j2);
+    j1 = 99;
+    print j2;
+
+    // legacy unmanaged still works
+    int x = 1;
+    int y = 2;
+    print x + y;
+}

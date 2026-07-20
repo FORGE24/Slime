@@ -1,0 +1,17 @@
+fn main() {
+    console.writeline("hello from slime");
+    int a = 10;
+    int b = 32;
+    int c = a + b;
+    console.writeline(c);
+    if (c == 42) {
+        console.writeline("answer ok");
+    } else {
+        console.writeline("answer bad");
+    }
+    int i = 0;
+    while (i < 3) {
+        console.writeline(i);
+        i = i + 1;
+    }
+}

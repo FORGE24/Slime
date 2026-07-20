@@ -1,0 +1,8 @@
+// slime standard library — timing
+namespace std.time;
+
+fn now() -> float {
+    return mono_now();
+}
+
+end namespace;

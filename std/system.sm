@@ -1,0 +1,8 @@
+// slime standard library — system entry helpers (legacy print.sm target)
+namespace std.system;
+
+fn hello() {
+    print "slime std.system ok";
+}
+
+end namespace;

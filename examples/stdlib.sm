@@ -1,0 +1,24 @@
+!link slime.std
+
+fn main() {
+    print std.math.abs_i(-42);
+    print std.math.clamp_i(100, 0, 10);
+    print std.math.min_i(3, 7);
+
+    float a = std.math.sqrt(9.0);
+    print_f6(a);
+
+    std.math.Vec2 v = std.math.Vec2 { x: 3.0, y: 4.0 };
+    print_f6(v.length());
+
+    str s = "hello";
+    print std.string.len(s);
+    print std.string.slice(s, 1, 4);
+    print std.string.eq("a", "a");
+
+    str n = std.conv.int_to_str(114514);
+    print n;
+    print std.conv.str_to_int("42");
+
+    std.io.writeln("stdlib ok");
+}

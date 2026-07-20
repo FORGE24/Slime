@@ -1,0 +1,57 @@
+// Advanced Slime2: ref/out, ownership (own/share/joint), generics, methods, virtual
+
+fn swap(ref int a, ref int b) {
+    int t = a;
+    a = b;
+    b = t;
+}
+
+fn id<T>(T x) -> T {
+    return x;
+}
+
+struct Box<T> {
+    T value;
+
+    fn get(ref T self) -> T {
+        return self.value;
+    }
+
+    fn set(ref T self, T v) {
+        self.value = v;
+    }
+}
+
+domain Dog {
+    int age;
+
+    virtual fn speak() -> str {
+        return "woof";
+    }
+
+    fn describe(ref Dog self) -> str {
+        return self.speak();
+    }
+}
+
+fn main() {
+    int x = 1;
+    int y = 2;
+    swap(x, y);
+    print x;
+    print y;
+
+    // exclusive own + move
+    own int o = 41;
+    own int p = move o;
+    print p;
+
+    var b = Box<int> { value: id<int>(41) };
+    print b.get();
+    b.set(99);
+    print b.get();
+
+    Dog d = Dog { age: 3 };
+    print d.describe();
+    print d.speak();
+}

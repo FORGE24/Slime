@@ -1,0 +1,12 @@
+// CTFE demo — arithmetic should collapse at compile time (Slime1 ETCA heritage).
+fn main() {
+    int a = 10 + 32;
+    int b = a * 2;
+    int c = b - 24;
+    console.writeline(c);
+    if (1 + 1 == 2) {
+        console.writeline("folded true branch");
+    } else {
+        console.writeline("dead else");
+    }
+}

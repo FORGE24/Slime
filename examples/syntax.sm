@@ -1,0 +1,29 @@
+fn classify(int n) -> int {
+    if n % 2 == 0 {
+        return 0;
+    } elif n % 3 == 0 {
+        return 1;
+    } else {
+        return 2;
+    }
+}
+
+fn main() {
+    var sum = 0;
+    let msg = "syntax ok";
+    print msg;
+
+    for i in 0..10 {
+        if i % 2 == 0 {
+            continue;
+        }
+        if i > 7 {
+            break;
+        }
+        sum += i;
+    }
+    print sum;
+    print classify(9);
+    print classify(4);
+    print classify(5);
+}

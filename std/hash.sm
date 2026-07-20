@@ -1,0 +1,8 @@
+// slime standard library — hashing
+namespace std.hash;
+
+fn md5(str s) -> str {
+    return md5(s);
+}
+
+end namespace;

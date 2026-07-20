@@ -1,0 +1,28 @@
+// slime standard library — strings
+namespace std.string;
+
+fn len(str s) -> int {
+    return strlen(s);
+}
+
+fn cmp(str a, str b) -> int {
+    return strcmp(a, b);
+}
+
+fn slice(str s, int start, int stop) -> str {
+    return substr(s, start, stop);
+}
+
+fn eq(str a, str b) -> bool {
+    return strcmp(a, b) == 0;
+}
+
+fn concat(str a, str b) -> str {
+    return a + b;
+}
+
+fn from_int(int n) -> str {
+    return itoa(n);
+}
+
+end namespace;

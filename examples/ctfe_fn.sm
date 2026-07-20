@@ -1,0 +1,15 @@
+// CTFE2: function fold — call collapses to LLVM constant (Slime1 register_functions_to_ctfe path)
+fn add(int a, int b) -> int {
+    return a + b;
+}
+
+fn twice(int x) -> int {
+    return add(x, x);
+}
+
+fn main() {
+    int x = add(10, 32);
+    int y = twice(21);
+    console.writeline(x);
+    console.writeline(y);
+}

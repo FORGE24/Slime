@@ -1,0 +1,20 @@
+// slime standard library — I/O helpers
+namespace std.io;
+
+fn writeln(str s) {
+    print s;
+}
+
+fn write_int(int n) {
+    print n;
+}
+
+fn write_float(float x) {
+    print_f6(x);
+}
+
+fn write_bool(bool b) {
+    print b;
+}
+
+end namespace;

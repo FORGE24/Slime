@@ -1,0 +1,17 @@
+// Inline runtime-shaped loops — CTFE should execute them at compile time.
+fn main() {
+    int N = 100000;
+    var s = 0;
+    var i = 0;
+    while i < N {
+        s = s + (i * i) + (i % 17);
+        i += 1;
+    }
+    var t = 0;
+    for j in 0..1000 {
+        t = t + j;
+    }
+    print s;
+    print t;
+    print i;
+}

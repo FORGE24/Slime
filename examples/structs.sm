@@ -1,0 +1,21 @@
+struct Point {
+    int x;
+    int y;
+}
+
+fn add(int a, int b) -> int {
+    return a + b;
+}
+
+fn make_point(int x, int y) -> Point {
+    return Point { x: x, y: y };
+}
+
+fn main() {
+    Point p = make_point(10, 32);
+    int s = add(p.x, p.y);
+    console.writeline(s);
+    p.x = 1;
+    console.writeline(p.x);
+    console.writeline(add(2, 3));
+}

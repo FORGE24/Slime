@@ -1,0 +1,251 @@
+// MT19937 (Mersenne Twister) + 10 complex Fibonacci-family sequences
+// Generates 1234 pseudo-random uint32 values (folded for output),
+// then prints ten deliberately heavy Fibonacci-related results.
+
+fn u32(int x) -> int {
+    return x & 0xFFFFFFFF;
+}
+
+fn fib(int n) -> int {
+    if n <= 1 {
+        return n;
+    }
+    var a = 0;
+    var b = 1;
+    var i = 2;
+    while i <= n {
+        var t = a + b;
+        a = b;
+        b = t;
+        i += 1;
+    }
+    return b;
+}
+
+fn lucas(int n) -> int {
+    if n == 0 {
+        return 2;
+    }
+    if n == 1 {
+        return 1;
+    }
+    var a = 2;
+    var b = 1;
+    var i = 2;
+    while i <= n {
+        var t = a + b;
+        a = b;
+        b = t;
+        i += 1;
+    }
+    return b;
+}
+
+fn trib(int n) -> int {
+    if n == 0 {
+        return 0;
+    }
+    if n == 1 {
+        return 0;
+    }
+    if n == 2 {
+        return 1;
+    }
+    var a = 0;
+    var b = 0;
+    var c = 1;
+    var i = 3;
+    while i <= n {
+        var t = a + b + c;
+        a = b;
+        b = c;
+        c = t;
+        i += 1;
+    }
+    return c;
+}
+
+fn fib_mod(int n, int m) -> int {
+    if n <= 1 {
+        return n % m;
+    }
+    var a = 0;
+    var b = 1;
+    var i = 2;
+    while i <= n {
+        var t = (a + b) % m;
+        a = b;
+        b = t;
+        i += 1;
+    }
+    return b;
+}
+
+fn fib_sum(int n) -> int {
+    var s = 0;
+    for i in 0..(n + 1) {
+        s += fib(i);
+    }
+    return s;
+}
+
+fn fib_sq_sum(int n) -> int {
+    var s = 0;
+    for i in 1..(n + 1) {
+        var f = fib(i);
+        s += f * f;
+    }
+    return s;
+}
+
+fn fib_alt_sum(int n) -> int {
+    var s = 0;
+    var sign = 1;
+    for i in 1..(n + 1) {
+        s += sign * fib(i);
+        sign = 0 - sign;
+    }
+    return s;
+}
+
+fn cassini(int n) -> int {
+    // F(n+1)*F(n-1) - F(n)^2 = (-1)^n
+    var fp = fib(n + 1);
+    var fm = fib(n - 1);
+    var f = fib(n);
+    return fp * fm - f * f;
+}
+
+fn fib_prod_window(int lo, int hi) -> int {
+    var p = 1;
+    var i = lo;
+    while i <= hi {
+        p = p * fib(i);
+        i += 1;
+    }
+    return p;
+}
+
+fn nested_fib_depth(int n) -> int {
+    // F(F(n)) with guard so index stays in i64-safe range
+    var inner = fib(n);
+    if inner > 90 {
+        inner = 90;
+    }
+    return fib(inner);
+}
+
+fn main() {
+    // ---- MT19937 state ----
+    int mt[624];
+    var mti = 625;
+    var seed = 5489;
+    var N = 624;
+    var M = 397;
+    var MATRIX_A = 0x9908B0DF;
+    var UPPER = 0x80000000;
+    var LOWER = 0x7FFFFFFF;
+    var MASK = 0xFFFFFFFF;
+
+    // seed
+    mt[0] = u32(seed);
+    mti = 1;
+    while mti < N {
+        var prev = mt[mti - 1];
+        var x = u32(1812433253 * (prev ^ (prev >> 30)) + mti);
+        mt[mti] = x;
+        mti += 1;
+    }
+
+    print "=== MT19937: 1234 draws ===";
+    var xor_fold = 0;
+    var sum_fold = 0;
+    var last = 0;
+    var count = 0;
+    while count < 1234 {
+        // twist when exhausted
+        if mti >= N {
+            var kk = 0;
+            while kk < N - M {
+                var y0 = u32((mt[kk] & UPPER) | (mt[kk + 1] & LOWER));
+                var mag = 0;
+                if (y0 & 1) == 1 {
+                    mag = MATRIX_A;
+                }
+                mt[kk] = u32(mt[kk + M] ^ (y0 >> 1) ^ mag);
+                kk += 1;
+            }
+            while kk < N - 1 {
+                var y1 = u32((mt[kk] & UPPER) | (mt[kk + 1] & LOWER));
+                var mag2 = 0;
+                if (y1 & 1) == 1 {
+                    mag2 = MATRIX_A;
+                }
+                mt[kk] = u32(mt[kk + (M - N)] ^ (y1 >> 1) ^ mag2);
+                kk += 1;
+            }
+            var y2 = u32((mt[N - 1] & UPPER) | (mt[0] & LOWER));
+            var mag3 = 0;
+            if (y2 & 1) == 1 {
+                mag3 = MATRIX_A;
+            }
+            mt[N - 1] = u32(mt[M - 1] ^ (y2 >> 1) ^ mag3);
+            mti = 0;
+        }
+
+        var y = mt[mti];
+        mti += 1;
+        // temper
+        y = y ^ (y >> 11);
+        y = y ^ ((y << 7) & 0x9D2C5680);
+        y = y ^ ((y << 15) & 0xEFC60000);
+        y = y ^ (y >> 18);
+        y = u32(y);
+
+        xor_fold = xor_fold ^ y;
+        sum_fold = u32(sum_fold + y);
+        last = y;
+        count += 1;
+    }
+
+    print "draws";
+    print 1234;
+    print "xor_fold";
+    print xor_fold;
+    print "sum_fold_u32";
+    print sum_fold;
+    print "last";
+    print last;
+
+    print "=== 10 complex Fibonacci-family ===";
+    // 1. classic large Fibonacci
+    print "F(90)";
+    print fib(90);
+    // 2. sum F(0)..F(40)
+    print "sum_F(0..40)";
+    print fib_sum(40);
+    // 3. nested F(F(11))
+    print "F(F(11))";
+    print nested_fib_depth(11);
+    // 4. Lucas L(50)
+    print "L(50)";
+    print lucas(50);
+    // 5. Tribonacci T(40)
+    print "T(40)";
+    print trib(40);
+    // 6. Cassini identity residue at n=40 → (-1)^n
+    print "cassini(40)";
+    print cassini(40);
+    // 7. sum of squares F(1)^2..F(30)^2 = F(30)*F(31)
+    print "sum_sq_F(1..30)";
+    print fib_sq_sum(30);
+    // 8. modular Fibonacci F(10000) mod 1_000_000_007
+    print "F(10000)%1000000007";
+    print fib_mod(10000, 1000000007);
+    // 9. alternating sum F(1)-F(2)+...+F(45)
+    print "alt_sum_F(1..45)";
+    print fib_alt_sum(45);
+    // 10. product window F(10)*...*F(16)
+    print "prod_F(10..16)";
+    print fib_prod_window(10, 16);
+}

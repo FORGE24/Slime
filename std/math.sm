@@ -1,0 +1,73 @@
+// slime standard library — math
+namespace std.math;
+
+fn abs_i(int x) -> int {
+    return abs(x);
+}
+
+fn abs_f(float x) -> float {
+    return abs(x);
+}
+
+fn min_i(int a, int b) -> int {
+    return min(a, b);
+}
+
+fn max_i(int a, int b) -> int {
+    return max(a, b);
+}
+
+fn min_f(float a, float b) -> float {
+    return min(a, b);
+}
+
+fn max_f(float a, float b) -> float {
+    return max(a, b);
+}
+
+fn clamp_i(int x, int lo, int hi) -> int {
+    return clamp(x, lo, hi);
+}
+
+fn clamp_f(float x, float lo, float hi) -> float {
+    return clamp(x, lo, hi);
+}
+
+fn sin(float x) -> float {
+    return sin(x);
+}
+
+fn cos(float x) -> float {
+    return cos(x);
+}
+
+fn sqrt(float x) -> float {
+    return sqrt(x);
+}
+
+fn pow(float x, float y) -> float {
+    return pow(x, y);
+}
+
+fn floor(float x) -> float {
+    return floor(x);
+}
+
+fn ceil(float x) -> float {
+    return ceil(x);
+}
+
+fn round(float x) -> float {
+    return round(x);
+}
+
+struct Vec2 {
+    float x;
+    float y;
+
+    fn length(ref Vec2 self) -> float {
+        return sqrt(self.x * self.x + self.y * self.y);
+    }
+}
+
+end namespace;

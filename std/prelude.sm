@@ -1,0 +1,8 @@
+!link slime.std.math
+!link slime.std.conv
+!link slime.std.string
+!link slime.std.io
+!link slime.std.time
+!link slime.std.hash
+!link slime.std.dict
+!link slime.std.own

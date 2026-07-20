@@ -1,0 +1,14 @@
+!link slime.std.system
+
+fn main() {
+    console.writeline("helloworld");
+    str msg = "slime ok";
+    int a = 114514;
+    if (a == 114514) {
+        console.writeline(a);
+    }
+    console.writeline(msg);
+    std.system.hello();
+    goto.end.this.fn;
+    console.writeline("unreachable");
+}

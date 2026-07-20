@@ -1,0 +1,45 @@
+// CTFE-favorable: pure loops + const args → compile-time fold / residual AOT
+// Contrast with combo (runtime-bound matrix/sin/sort/hash/string).
+
+fn work(int n) -> int {
+    var s = 0;
+    var i = 0;
+    while i < n {
+        // mix so clang cannot wipe the whole loop as dead
+        s = s + (i * i) + (i % 17);
+        i += 1;
+    }
+    return s;
+}
+
+fn fib(int n) -> int {
+    if n <= 1 {
+        return n;
+    }
+    var a = 0;
+    var b = 1;
+    var i = 2;
+    while i <= n {
+        var t = a + b;
+        a = b;
+        b = t;
+        i += 1;
+    }
+    return b;
+}
+
+fn main() {
+    // Const calls: CTFE2 (--etca) folds each call; -O residual PE-runs all of main.
+    int N = 2500000;
+    int a = work(N);
+    int b = work(N);
+    int c = work(N);
+    int d = work(N);
+    int f = fib(45);
+    int g = fib(46);
+    int h = fib(47);
+    int sink = a + b + c + d + f + g + h;
+    print sink;
+    print a;
+    print f;
+}

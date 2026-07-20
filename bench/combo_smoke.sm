@@ -1,0 +1,122 @@
+// Smoke combo — same structure as combo.sm, tiny workload for IDE/dev.
+// NOT for fair scoring. Full bench: combo.sm (SCALE=90).
+
+fn rng_u64(int state) -> int {
+    return state * 6364136223846793005 + 1;
+}
+
+fn main() {
+    int MAT_N = 8;
+    int MAT_ROUNDS = 2;
+    int MATH_ITERS = 1000;
+    int SORT_LEN = 64;
+    int HASH_OPS = 32;
+    int STR_ROUNDS = 16;
+    int NN = MAT_N * MAT_N;
+    int state = 666;
+    float sink = 0.0;
+    float t0 = mono_now();
+
+    float A[64];
+    float B[64];
+    float C[64];
+    var i = 0;
+    while i < NN {
+        state = rng_u64(state);
+        A[i] = float(state >> 11) * (1.0 / 9007199254740992.0);
+        state = rng_u64(state);
+        B[i] = float(state >> 11) * (1.0 / 9007199254740992.0);
+        C[i] = 0.0;
+        i += 1;
+    }
+    var r = 0;
+    while r < MAT_ROUNDS {
+        i = 0;
+        while i < MAT_N {
+            var j = 0;
+            while j < MAT_N {
+                float acc = C[i * MAT_N + j];
+                var k = 0;
+                while k < MAT_N {
+                    acc = acc + A[i * MAT_N + k] * B[k * MAT_N + j];
+                    k += 1;
+                }
+                C[i * MAT_N + j] = acc;
+                j += 1;
+            }
+            i += 1;
+        }
+        r += 1;
+    }
+    i = 0;
+    while i < NN {
+        sink = sink + C[i];
+        i += 1;
+    }
+
+    float fact[12];
+    fact[0] = 1.0;
+    i = 1;
+    while i < 12 {
+        fact[i] = fact[i - 1] * float(i);
+        i += 1;
+    }
+    float accm = 0.0;
+    var t = 0;
+    while t < MATH_ITERS {
+        state = rng_u64(state);
+        float x = float(state >> 11) * (1.0 / 9007199254740992.0);
+        accm = accm + sin(x) + cos(x) + fact[t % 12];
+        t += 1;
+    }
+    sink = sink + accm;
+
+    float arr[64];
+    i = 0;
+    while i < SORT_LEN {
+        state = rng_u64(state);
+        arr[i] = float(state >> 11) * (1.0 / 9007199254740992.0);
+        i += 1;
+    }
+    // tiny insertion sort
+    i = 1;
+    while i < SORT_LEN {
+        float key = arr[i];
+        var j = i - 1;
+        while j >= 0 {
+            if arr[j] <= key {
+                break;
+            }
+            arr[j + 1] = arr[j];
+            j -= 1;
+        }
+        arr[j + 1] = key;
+        i += 1;
+    }
+    sink = sink + arr[0];
+
+    var d = dict_new();
+    i = 0;
+    while i < HASH_OPS {
+        state = rng_u64(state);
+        dict_put(d, itoa(i), float(state >> 11) * (1.0 / 9007199254740992.0));
+        i += 1;
+    }
+    dict_del_prefix1(d);
+    sink = sink + dict_sum(d);
+
+    str s = "";
+    i = 0;
+    while i < STR_ROUNDS {
+        s = s + "#" + itoa(i) + ";";
+        i += 1;
+    }
+    str dig = md5(s);
+    dig = dig + "";
+
+    float t1 = mono_now();
+    if sink > 1.0e308 {
+        print_f6(0.0);
+    }
+    print_f6(t1 - t0);
+}

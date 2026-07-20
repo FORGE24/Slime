@@ -1,0 +1,19 @@
+[package]
+name = "slime"
+version = "0.2.0"
+edition = "2021"
+description = "Slime2: Slime language → LLVM IR compiler (inherits CTFE/ETCA from FORGE24/Slime)"
+license = "GPL-2.0-or-later"
+repository = "https://github.com/FORGE24/Slime"
+
+[[bin]]
+name = "slime"
+path = "src/main.rs"
+
+[dependencies]
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+opt-level = 3
+strip = "symbols"

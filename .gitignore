@@ -1,0 +1,9 @@
+/target/
+*.exe
+*.obj
+*.o
+*.ll
+*.out
+.kagent/
+.DS_Store
+*.pdb

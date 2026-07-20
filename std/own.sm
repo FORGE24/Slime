@@ -1,0 +1,10 @@
+// slime standard library — ownership
+// Language builtins (prefer these):
+//   share_new / share_peer / joint_new / joint_peer / consent / drop / move
+namespace std.own;
+
+fn discard_int(own int x) {
+    drop(x);
+}
+
+end namespace;
